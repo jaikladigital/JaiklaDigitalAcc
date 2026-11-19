@@ -14,6 +14,35 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '40mb' }));
+  app.use(
+    (
+      err: unknown,
+      _req: express.Request,
+      res: express.Response,
+      next: express.NextFunction
+    ) => {
+      if (!err) {
+        next();
+        return;
+      }
+      const typedErr = err as { status?: number; type?: string; message?: string };
+      if (typedErr.type === 'entity.too.large' || typedErr.status === 413) {
+        res.status(413).json({
+          ok: false,
+          error: 'ขนาดไฟล์รูปภาพใหญ่เกินกำหนด กรุณาลดขนาดภาพหรือถ่ายใหม่แล้วลองอีกครั้ง',
+        });
+        return;
+      }
+      if (typedErr instanceof SyntaxError || typedErr.status === 400) {
+        res.status(400).json({ ok: false, error: 'รูปแบบข้อมูลคำขอไม่ถูกต้อง (Invalid JSON)' });
+        return;
+      }
+      res.status(500).json({
+        ok: false,
+        error: typedErr.message || 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์',
+      });
+    }
+  );
 
   app.post('/api/extract-receipt', async (req, res) => {
     const body = (req.body || {}) as {

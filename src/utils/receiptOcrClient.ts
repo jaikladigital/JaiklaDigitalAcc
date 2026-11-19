@@ -44,11 +44,11 @@ async function prepareImageBase64ForOcr(file: File): Promise<{ base64: string; m
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const maxWidth = 1450;
+        const maxWidth = 1280;
         const scale = Math.min(1, maxWidth / img.width);
         const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           const raw = String(reader.result);
@@ -56,7 +56,7 @@ async function prepareImageBase64ForOcr(file: File): Promise<{ base64: string; m
           return;
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
         resolve({ base64: dataUrl, mimeType: 'image/jpeg' });
       };
       img.onerror = () => {
@@ -67,6 +67,55 @@ async function prepareImageBase64ForOcr(file: File): Promise<{ base64: string; m
     reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์รูปภาพได้'));
     reader.readAsDataURL(file);
   });
+}
+
+async function parseOcrHttpResponse(res: Response, fallbackMsg: string): Promise<ReceiptOcrResponse> {
+  let rawText = '';
+  try {
+    rawText = await res.text();
+  } catch {
+    return { ok: false, error: fallbackMsg };
+  }
+
+  let parsed: ReceiptOcrResponse | null = null;
+  if (rawText.trim().startsWith('{')) {
+    try {
+      parsed = JSON.parse(rawText) as ReceiptOcrResponse;
+    } catch {
+      parsed = null;
+    }
+  }
+
+  if (parsed && typeof parsed === 'object') {
+    if (!res.ok || !parsed.ok) {
+      return {
+        ok: false,
+        error: parsed.error || fallbackMsg,
+      };
+    }
+    return parsed;
+  }
+
+  if (res.status === 413) {
+    return {
+      ok: false,
+      error: 'ขนาดไฟล์รูปภาพใหญ่เกินไป กรุณาลองเลือกภาพที่ขนาดเล็กลงหรือกรอกข้อมูลด้วยตนเอง',
+    };
+  }
+  if (res.status === 503) {
+    return {
+      ok: false,
+      error: 'ระบบอ่านใบเสร็จอัตโนมัติยังไม่พร้อมใช้งานในขณะนี้ กรุณากรอกข้อมูลด้านล่างด้วยตนเอง',
+    };
+  }
+  if (res.status >= 500 || /server error/i.test(rawText)) {
+    return {
+      ok: false,
+      error: 'ระบบอ่านใบเสร็จด้วย AI ขัดข้องชั่วคราว กรุณากด "สแกนใหม่อีกครั้ง" หรือกรอกข้อมูลด้านล่างด้วยตนเอง',
+    };
+  }
+
+  return { ok: false, error: fallbackMsg };
 }
 
 export async function scanMultiPageScannedItems(
@@ -87,21 +136,14 @@ export async function scanMultiPageScannedItems(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pages: payloadPages }),
     });
-    const json = (await res.json()) as ReceiptOcrResponse;
-    if (!res.ok || !json.ok) {
-      return {
-        ok: false,
-        error: json.error || 'ไม่สามารถอ่านข้อมูลจากเอกสารสแกนได้ กรุณากรอกเพิ่มเติมด้วยตนเอง',
-      };
-    }
-    return json;
-  } catch (err) {
+    return await parseOcrHttpResponse(
+      res,
+      'ไม่สามารถอ่านข้อมูลจากเอกสารสแกนได้ กรุณากรอกเพิ่มเติมด้วยตนเอง'
+    );
+  } catch {
     return {
       ok: false,
-      error:
-        err instanceof Error
-          ? err.message
-          : 'ไม่สามารถสแกนเอกสารหลายหน้าได้ กรุณากรอกข้อมูลด้วยตนเอง',
+      error: 'ไม่สามารถเชื่อมต่อระบบสแกนเอกสารได้ในขณะนี้ กรุณากรอกข้อมูลด้วยตนเอง',
     };
   }
 }
@@ -114,21 +156,14 @@ export async function scanReceiptFile(file: File): Promise<ReceiptOcrResponse> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64: base64, mimeType }),
     });
-    const json = (await res.json()) as ReceiptOcrResponse;
-    if (!res.ok || !json.ok) {
-      return {
-        ok: false,
-        error: json.error || 'ไม่สามารถอ่านข้อมูลจากรูปใบเสร็จได้ กรุณากรอกข้อมูลเพิ่มเติมด้วยตนเอง',
-      };
-    }
-    return json;
-  } catch (err) {
+    return await parseOcrHttpResponse(
+      res,
+      'ไม่สามารถอ่านข้อมูลจากรูปใบเสร็จได้ กรุณากรอกข้อมูลเพิ่มเติมด้วยตนเอง'
+    );
+  } catch {
     return {
       ok: false,
-      error:
-        err instanceof Error
-          ? err.message
-          : 'ไม่สามารถสแกนรูปใบเสร็จได้ กรุณากรอกข้อมูลด้วยตนเอง',
+      error: 'ไม่สามารถสแกนรูปใบเสร็จได้ กรุณากรอกข้อมูลด้วยตนเอง',
     };
   }
 }
@@ -145,11 +180,7 @@ export async function scanReceiptFromDataUrlOrImage(srcUrl: string): Promise<Rec
           mimeType: mimeMatch?.[1] || 'image/webp',
         }),
       });
-      const json = (await res.json()) as ReceiptOcrResponse;
-      if (!res.ok || !json.ok) {
-        return { ok: false, error: json.error || 'ไม่สามารถสแกนรูปภาพได้' };
-      }
-      return json;
+      return await parseOcrHttpResponse(res, 'ไม่สามารถสแกนรูปภาพได้ กรุณากรอกข้อมูลด้วยตนเอง');
     }
 
     const imgRes = await fetch(srcUrl);

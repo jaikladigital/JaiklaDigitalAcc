@@ -60,6 +60,7 @@ import {
   generateEmergencyVoucherNumber,
   getMonthYearFromDate,
   getTodayISO,
+  sanitizeDecimalInput,
 } from '../utils/formatters';
 import { sendEmergencyCashLineAlert } from '../utils/lineClient';
 import {
@@ -185,6 +186,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
     emergencyStatus: 'pending_reimburse' as EmergencyCashStatus,
     notifyLineOnSave: true,
   });
+  const [amountInput, setAmountInput] = useState<string>('');
 
   const emergencyExpenses = useMemo(
     () => expenses.filter((e) => Boolean(e.isEmergencyCash)),
@@ -279,6 +281,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
     setOcrStatus('idle');
     setOcrNote('');
     setOcrUnreadableFields([]);
+    setAmountInput('');
     setShowModal(true);
   };
 
@@ -312,6 +315,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
       emergencyStatus: exp.emergencyStatus || 'pending_reimburse',
       notifyLineOnSave: false,
     });
+    setAmountInput(exp.amount > 0 ? String(exp.amount) : '');
     setOcrStatus('idle');
     setOcrNote('');
     setOcrUnreadableFields([]);
@@ -414,6 +418,9 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
       vatRate: d.vatRate > 0 ? d.vatRate : prev.vatRate,
       whtRate: d.whtRate > 0 ? d.whtRate : prev.whtRate,
     }));
+    if (extractedAmount > 0) {
+      setAmountInput(String(extractedAmount));
+    }
 
     const missingList = Array.from(missing);
     setOcrUnreadableFields(missingList);
@@ -2040,17 +2047,21 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                     )}
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     className={`form-control font-mono-num fw-bold ${
                       ocrUnreadableFields.includes('amount')
                         ? 'border-amber-400 bg-amber-50/40'
                         : ''
                     }`}
                     required
-                    value={form.amount}
-                    onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
+                    placeholder="0.00"
+                    value={amountInput}
+                    onChange={(e) => {
+                      const { text, value } = sanitizeDecimalInput(e.target.value);
+                      setAmountInput(text);
+                      setForm({ ...form, amount: value });
+                    }}
                   />
                 </div>
                 <div className="col-md-4">

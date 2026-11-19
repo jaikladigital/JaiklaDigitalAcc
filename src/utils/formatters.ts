@@ -9,6 +9,29 @@ export function formatTHB(amount: number): string {
   });
 }
 
+export function sanitizeDecimalInput(raw: string): { text: string; value: number } {
+  const cleaned = raw.replace(/[^0-9.]/g, '');
+  if (!cleaned) return { text: '', value: 0 };
+
+  const dotIdx = cleaned.indexOf('.');
+  let normalized =
+    dotIdx >= 0
+      ? `${cleaned.slice(0, dotIdx)}.${cleaned.slice(dotIdx + 1).replace(/\./g, '')}`
+      : cleaned;
+
+  if (normalized.startsWith('.')) {
+    normalized = `0${normalized}`;
+  } else {
+    normalized = normalized.replace(/^0+(?=\d)/, '');
+  }
+
+  const num = Number(normalized);
+  return {
+    text: normalized,
+    value: Number.isFinite(num) ? Math.max(0, num) : 0,
+  };
+}
+
 export function formatThaiDate(dateStr?: string): string {
   if (!dateStr) return '-';
   const d = new Date(dateStr);

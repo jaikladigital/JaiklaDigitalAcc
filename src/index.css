@@ -1,4 +1,4 @@
-@layer bootstrap, theme, base, components, utilities;
+@layer theme, base, bootstrap, components, utilities;
 @import "bootstrap/dist/css/bootstrap.min.css" layer(bootstrap);
 @import "tailwindcss";
 
@@ -23,7 +23,7 @@
   --jkd-text-xs: clamp(0.72rem, 0.14vw + 0.68rem, 0.78rem);
 }
 
-@layer base {
+@layer components {
   html {
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
@@ -246,7 +246,8 @@
 .form-control, .form-select {
   font-size: 0.875rem;
   line-height: 1.6;
-  border-color: #cbd5e1;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 0.52rem 0.78rem;
   transition: border-color 150ms var(--ease-figma), box-shadow 150ms var(--ease-figma);

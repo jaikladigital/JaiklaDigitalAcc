@@ -51,6 +51,7 @@ import {
   generate50TawiNumber,
   getMonthYearFromDate,
   getTodayISO,
+  sanitizeDecimalInput,
 } from '../utils/formatters';
 import {
   closeSwal,
@@ -146,6 +147,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     scanFileSizeBytes: 0,
     incomeType50Tawi: 'ค่าจ้างทำของ / ค่าบริการ',
   });
+  const [amountInput, setAmountInput] = useState<string>('');
 
   const filteredExpenses = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -218,6 +220,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     setOcrStatus('idle');
     setOcrNote('');
     setOcrUnreadableFields([]);
+    setAmountInput('');
     setShowModal(true);
   };
 
@@ -261,6 +264,9 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
       return;
     }
     const cat = categories.find((c) => c.id === sup.categoryId);
+    if (form.amount === 0 && sup.baseRate > 0) {
+      setAmountInput(String(sup.baseRate));
+    }
     setForm((prev) => ({
       ...prev,
       supplierId: sup.id,
@@ -315,6 +321,9 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
       vatRate: d.vatRate > 0 ? d.vatRate : prev.vatRate,
       whtRate: d.whtRate > 0 ? d.whtRate : prev.whtRate,
     }));
+    if (extractedAmount > 0) {
+      setAmountInput(String(extractedAmount));
+    }
 
     const missingList = Array.from(missing);
     setOcrUnreadableFields(missingList);
@@ -1521,17 +1530,21 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     )}
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     className={`form-control font-mono-num ${
                       ocrUnreadableFields.includes('amount')
                         ? 'border-amber-400 bg-amber-50/40'
                         : ''
                     }`}
                     required
-                    value={form.amount}
-                    onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
+                    placeholder="0.00"
+                    value={amountInput}
+                    onChange={(e) => {
+                      const { text, value } = sanitizeDecimalInput(e.target.value);
+                      setAmountInput(text);
+                      setForm({ ...form, amount: value });
+                    }}
                   />
                 </div>
                 <div className="col-md-4">

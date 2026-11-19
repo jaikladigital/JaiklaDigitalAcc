@@ -148,7 +148,25 @@ export async function extractReceiptFromImage(
     });
 
     const raw = (response.text ?? '{}').trim();
-    const parsed = JSON.parse(raw) as Partial<ReceiptExtractResult>;
+    const cleaned = raw
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+    let parsed: Partial<ReceiptExtractResult>;
+    try {
+      parsed = JSON.parse(cleaned) as Partial<ReceiptExtractResult>;
+    } catch {
+      const startIdx = cleaned.indexOf('{');
+      const endIdx = cleaned.lastIndexOf('}');
+      if (startIdx >= 0 && endIdx > startIdx) {
+        parsed = JSON.parse(cleaned.slice(startIdx, endIdx + 1)) as Partial<ReceiptExtractResult>;
+      } else {
+        throw new ReceiptExtractError(
+          'AI อ่านรูปภาพแล้วไม่สามารถจัดรูปแบบข้อมูลได้ กรุณากรอกรายละเอียดเพิ่มเติมด้านล่าง',
+          502
+        );
+      }
+    }
 
     const subtotal = Number.isFinite(Number(parsed.subtotal)) ? Math.max(0, Number(parsed.subtotal)) : 0;
     const vatRate = Number.isFinite(Number(parsed.vatRate)) ? Math.min(30, Math.max(0, Number(parsed.vatRate))) : 0;
