@@ -85,17 +85,27 @@ type ActiveTab =
   | 'storage'
   | 'settings';
 
-const NAV_ITEMS: Array<{ id: ActiveTab; label: string; icon: React.FC<{ className?: string }> }> = [
-  { id: 'dashboard', label: 'งบประมาณและภาษี', icon: LayoutDashboard },
-  { id: 'documents', label: 'ออกเอกสาร (QT/INV/REC)', icon: FileText },
-  { id: 'customers', label: 'ลูกค้าและวิเคราะห์', icon: Building2 },
-  { id: 'suppliers', label: 'ซัพพลายเยอร์และเทียบราคา', icon: Truck },
-  { id: 'expenses', label: 'รายจ่ายและ 50 ทวิ', icon: Receipt },
-  { id: 'emergency', label: 'เบิกจ่ายฉุกเฉิน (LINE)', icon: AlertTriangle },
-  { id: 'annual', label: 'งบดุลและภาษีประจำปี', icon: Landmark },
-  { id: 'storage', label: 'คลังข้อมูลและพื้นที่', icon: HardDrive },
-  { id: 'settings', label: 'ตั้งค่าระบบและภาษี', icon: Settings },
+type NavGroup = 'งานขายและเอกสาร' | 'รายจ่ายและคู่ค้า' | 'บัญชีและตั้งค่า';
+
+const NAV_ITEMS: Array<{
+  id: ActiveTab;
+  label: string;
+  shortLabel: string;
+  group: NavGroup;
+  icon: React.FC<{ className?: string }>;
+}> = [
+  { id: 'dashboard', label: 'งบประมาณและภาษี', shortLabel: 'ภาพรวม', group: 'งานขายและเอกสาร', icon: LayoutDashboard },
+  { id: 'documents', label: 'ออกเอกสาร (QT/INV/REC)', shortLabel: 'เอกสาร', group: 'งานขายและเอกสาร', icon: FileText },
+  { id: 'customers', label: 'ลูกค้าและวิเคราะห์', shortLabel: 'ลูกค้า', group: 'งานขายและเอกสาร', icon: Building2 },
+  { id: 'suppliers', label: 'ซัพพลายเยอร์และเทียบราคา', shortLabel: 'คู่ค้า', group: 'รายจ่ายและคู่ค้า', icon: Truck },
+  { id: 'expenses', label: 'รายจ่ายและ 50 ทวิ', shortLabel: 'รายจ่าย', group: 'รายจ่ายและคู่ค้า', icon: Receipt },
+  { id: 'emergency', label: 'เบิกจ่ายฉุกเฉิน (LINE)', shortLabel: 'เบิกด่วน', group: 'รายจ่ายและคู่ค้า', icon: AlertTriangle },
+  { id: 'annual', label: 'งบดุลและภาษีประจำปี', shortLabel: 'งบประจำปี', group: 'บัญชีและตั้งค่า', icon: Landmark },
+  { id: 'storage', label: 'คลังข้อมูลและพื้นที่', shortLabel: 'คลังข้อมูล', group: 'บัญชีและตั้งค่า', icon: HardDrive },
+  { id: 'settings', label: 'ตั้งค่าระบบและภาษี', shortLabel: 'ตั้งค่า', group: 'บัญชีและตั้งค่า', icon: Settings },
 ];
+
+const MOBILE_BOTTOM_TABS: ActiveTab[] = ['dashboard', 'documents', 'expenses', 'emergency'];
 
 const INITIAL_CATEGORIES = [
   { name: 'Production & Video Shooting', description: 'ทีมถ่ายทำ ตัดต่อ และโปรดักชัน', defaultWhtRate: 3 },
@@ -692,27 +702,53 @@ function MainApp() {
         </div>
       </aside>
 
-      {/* Mobile Header */}
-      <header className="no-print lg:hidden bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <JaiklaLogoSVG className="w-9 h-9 shrink-0" logoUrl={company.logoUrl} />
-          <span className="text-sm font-bold text-slate-900 truncate leading-[1.5] py-0.5">
-            {company.companyNameTh}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 text-slate-700 rounded-lg hover:bg-slate-100"
-          aria-label="Toggle Menu"
-        >
-          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </header>
+      {/* Mobile & Tablet Top App Bar (< lg) */}
+      <header className="no-print lg:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
+        <div className="px-3.5 sm:px-5 h-[54px] flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <JaiklaLogoSVG className="w-8 h-8 shrink-0" logoUrl={company.logoUrl} />
+            <div className="min-w-0">
+              <div className="text-[13px] sm:text-sm font-bold text-slate-900 truncate leading-tight">
+                {NAV_ITEMS.find((n) => n.id === activeTab)?.label || company.companyNameTh}
+              </div>
+              <div className="text-[11px] text-slate-500 truncate leading-tight">
+                {company.companyNameTh}
+              </div>
+            </div>
+          </div>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="no-print lg:hidden fixed inset-x-0 top-[57px] bg-white border-b border-slate-200 z-30 p-3 space-y-1 shadow-lg">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="hidden md:flex items-center gap-2 pe-2 border-r border-slate-200">
+              <span className="text-xs font-semibold text-slate-700 max-w-[140px] truncate">
+                {user.displayName || user.email}
+              </span>
+              <span className="text-[10px] font-bold uppercase font-mono-num text-slate-500">
+                {userProfile?.role || (user.email === 'jaikladigital@gmail.com' ? 'admin' : 'staff')}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="relative min-h-[42px] min-w-[42px] px-2.5 inline-flex items-center justify-center gap-1.5 text-slate-700 !rounded-xl bg-slate-100 hover:bg-slate-200 border-0 text-xs font-semibold"
+              aria-label="เปิดเมนูทั้งหมด"
+            >
+              <Menu className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">เมนูทั้งหมด</span>
+              {pendingEmergencyCount > 0 && (
+                <span className="px-1.5 py-0.5 text-[10px] font-bold font-mono-num rounded-full bg-rose-600 text-white leading-none">
+                  {pendingEmergencyCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Tablet Quick-Switch Ribbon (md to <lg, 768px-1023px) */}
+        <nav
+          aria-label="เมนูแท็บเล็ต"
+          className="hidden md:flex lg:hidden items-center gap-1.5 px-4 py-1.5 border-t border-slate-100 overflow-x-auto no-scrollbar bg-slate-50/70"
+        >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = activeTab === item.id;
@@ -720,35 +756,211 @@ function MainApp() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium ${
-                  active ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'
+                onClick={() => setActiveTab(item.id)}
+                className={`min-h-[36px] px-3 py-1.5 !rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 border transition-colors ${
+                  active
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {item.label}
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{item.shortLabel}</span>
+                {item.id === 'emergency' && pendingEmergencyCount > 0 && (
+                  <span
+                    className={`px-1.5 py-0.5 text-[10px] font-bold font-mono-num rounded-full leading-none ${
+                      active ? 'bg-rose-500 text-white' : 'bg-rose-600 text-white'
+                    }`}
+                  >
+                    {pendingEmergencyCount}
+                  </span>
+                )}
               </button>
             );
           })}
-          <div className="pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-rose-700 bg-rose-50 rounded-lg"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              ออกจากระบบ
-            </button>
+        </nav>
+      </header>
+
+      {/* Mobile & Tablet Slide-Over Drawer */}
+      {mobileMenuOpen && (
+        <div className="no-print lg:hidden fixed inset-0 z-50 flex justify-end">
+          <div
+            className="fixed inset-0 bg-slate-900/45 backdrop-blur-xs"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="เมนูนำทางระบบ"
+            className="relative w-full max-w-[330px] h-full bg-white shadow-2xl flex flex-col animate-figma-in z-10"
+          >
+            {/* Drawer Header */}
+            <div className="px-4 py-3.5 border-b border-slate-200 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <JaiklaLogoSVG className="w-9 h-9 shrink-0" logoUrl={company.logoUrl} />
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-slate-900 truncate leading-tight">
+                    {company.companyNameTh}
+                  </div>
+                  <div className="text-[11px] text-slate-500 truncate leading-tight">
+                    เมนูจัดการระบบทั้งหมด
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center !rounded-xl text-slate-600 hover:bg-slate-100 border-0 bg-transparent"
+                aria-label="ปิดเมนู"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* User Identity Card */}
+            <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center gap-2.5">
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || 'User'}
+                  referrerPolicy="no-referrer"
+                  className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
+                  {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-slate-900 truncate leading-tight">
+                  {user.displayName || user.email}
+                </div>
+                <div className="text-[11px] text-slate-500 truncate leading-tight">
+                  {user.email} ·{' '}
+                  <span className="uppercase font-mono-num font-semibold text-slate-700">
+                    {userProfile?.role || (user.email === 'jaikladigital@gmail.com' ? 'admin' : 'staff')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Grouped Navigation Items */}
+            <div className="flex-1 overflow-y-auto p-3.5 space-y-4">
+              {(['งานขายและเอกสาร', 'รายจ่ายและคู่ค้า', 'บัญชีและตั้งค่า'] as NavGroup[]).map(
+                (groupName) => (
+                  <div key={groupName} className="space-y-1">
+                    <div className="px-2 text-[11px] font-bold text-slate-400 tracking-wide">
+                      {groupName}
+                    </div>
+                    {NAV_ITEMS.filter((item) => item.group === groupName).map((item) => {
+                      const Icon = item.icon;
+                      const active = activeTab === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setActiveTab(item.id);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-full min-h-[44px] flex items-center gap-3 px-3 py-2 !rounded-xl text-sm font-medium transition-colors border-0 ${
+                            active
+                              ? 'bg-slate-900 text-white'
+                              : 'text-slate-700 bg-transparent hover:bg-slate-100'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" />
+                          <span className="flex-1 text-left truncate">{item.label}</span>
+                          {item.id === 'emergency' && pendingEmergencyCount > 0 && (
+                            <span className="px-2 py-0.5 text-[10px] font-bold font-mono-num rounded-full bg-rose-600 text-white">
+                              {pendingEmergencyCount}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-3.5 border-t border-slate-200 bg-white">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="w-full min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 !rounded-xl border border-rose-200"
+              >
+                <LogOut className="w-4 h-4" />
+                ออกจากระบบ
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Mobile Fixed Thumb-Zone Bottom Navigation (< md) */}
+      <nav
+        aria-label="เมนูลัดมือถือ"
+        className="no-print md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="grid grid-cols-5 h-[60px] items-center">
+          {MOBILE_BOTTOM_TABS.map((tabId) => {
+            const item = NAV_ITEMS.find((n) => n.id === tabId)!;
+            const Icon = item.icon;
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveTab(item.id)}
+                className={`relative h-full flex flex-col items-center justify-center gap-0.5 px-1 border-0 bg-transparent transition-colors ${
+                  active ? 'text-slate-900 font-bold' : 'text-slate-500 font-medium'
+                }`}
+              >
+                <div
+                  className={`relative flex items-center justify-center w-9 h-6 rounded-full transition-colors ${
+                    active ? 'bg-slate-900 text-white' : ''
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.id === 'emergency' && pendingEmergencyCount > 0 && (
+                    <span className="absolute -top-1 -right-2 px-1 min-w-[16px] h-4 flex items-center justify-center text-[9px] font-bold font-mono-num rounded-full bg-rose-600 text-white">
+                      {pendingEmergencyCount}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] leading-tight whitespace-nowrap">
+                  {item.shortLabel}
+                </span>
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className={`relative h-full flex flex-col items-center justify-center gap-0.5 px-1 border-0 bg-transparent transition-colors ${
+              !MOBILE_BOTTOM_TABS.includes(activeTab)
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 font-medium'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-center w-9 h-6 rounded-full transition-colors ${
+                !MOBILE_BOTTOM_TABS.includes(activeTab) ? 'bg-slate-900 text-white' : ''
+              }`}
+            >
+              <Menu className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] leading-tight whitespace-nowrap">เมนูอื่น</span>
+          </button>
+        </div>
+      </nav>
+
       {/* Main Content Area */}
-      <main className="flex-1 lg:pl-64 min-w-0">
-        <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 lg:pl-64 min-w-0 pb-20 md:pb-6 lg:pb-0">
+        <div className="max-w-[1440px] mx-auto p-3.5 sm:p-6 lg:p-8">
           {activeTab === 'dashboard' && (
             <DashboardView
               documents={documents}

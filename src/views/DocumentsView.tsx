@@ -1754,49 +1754,49 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
 
   // ==================== LIST MODE ====================
   return (
-    <div className="space-y-6 animate-figma-in">
+    <div className="space-y-5 animate-figma-in">
       <div className="flex flex-col items-center text-center gap-3 pb-1">
-        <div className="min-w-0 max-w-3xl">
-          <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks('ระบบออกเอกสารบัญชี (ใบเสนอราคา · ใบแจ้งหนี้/วางบิล · ใบเสร็จรับเงิน)')}
+        <div className="min-w-0 max-w-3xl px-1">
+          <h1 className="thai-heading thai-title-center !text-lg sm:!text-xl font-bold text-slate-900 m-0">
+            {formatThaiLineBreaks('ระบบออกเอกสารบัญชี (ใบเสนอราคา · ใบแจ้งหนี้ · ใบเสร็จรับเงิน)')}
           </h1>
-          <p className="thai-prose text-sm text-slate-500 mt-1 mb-0">
-            สร้างเอกสารพร้อมระบบแปลงข้ามเอกสารในคลิกเดียว แบ่งงวดชำระ คำนวณภาษี และพิมพ์ A4 PDF
+          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1 mb-0">
+            สร้างเอกสารพร้อมแปลงข้ามเอกสารในคลิกเดียว แบ่งงวดชำระ คำนวณภาษี และพิมพ์ A4 PDF
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-2">
           <button
             type="button"
             onClick={() => startNewDocument('QT')}
-            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800 whitespace-nowrap"
+            className="col-span-2 sm:col-span-1 figma-btn !rounded-xl min-h-[44px] inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 whitespace-nowrap border-0"
           >
-            <Plus className="w-4 h-4" />
-            สร้างใบเสนอราคา (QT)
+            <Plus className="w-4 h-4 shrink-0" />
+            <span>สร้างใบเสนอราคา (QT)</span>
           </button>
           <button
             type="button"
             onClick={() => startNewDocument('INV')}
-            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-blue-800 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 whitespace-nowrap"
+            className="figma-btn !rounded-xl min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100 whitespace-nowrap"
           >
-            <FileText className="w-4 h-4" />
-            สร้างใบแจ้งหนี้ (INV)
+            <FileText className="w-4 h-4 shrink-0" />
+            <span>สร้าง INV</span>
           </button>
           <button
             type="button"
             onClick={() => startNewDocument('REC')}
-            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 whitespace-nowrap"
+            className="figma-btn !rounded-xl min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap"
           >
-            <FileCheck2 className="w-4 h-4" />
-            สร้างใบเสร็จ (REC)
+            <FileCheck2 className="w-4 h-4 shrink-0" />
+            <span>สร้าง REC</span>
           </button>
         </div>
       </div>
 
       {/* Filter Tabs & Search */}
-      <div className="figma-card p-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-lg">
+      <div className="figma-card p-3.5 sm:p-4 space-y-3 lg:space-y-0 lg:flex lg:flex-wrap lg:items-center lg:justify-between lg:gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5">
+          <div className="grid grid-cols-2 sm:inline-flex gap-1 p-1 bg-slate-100 rounded-xl w-full sm:w-auto">
             {(
               [
                 { key: 'ALL', label: `ทั้งหมด (${documents.length})` },
@@ -1809,8 +1809,10 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                 key={tab.key}
                 type="button"
                 onClick={() => setTypeFilter(tab.key)}
-                className={`px-3 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap leading-[1.45] ${
-                  typeFilter === tab.key ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+                className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 text-xs font-semibold !rounded-lg transition-colors whitespace-nowrap text-center border-0 ${
+                  typeFilter === tab.key
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'bg-transparent text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {tab.label}
@@ -1819,7 +1821,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
           </div>
 
           <select
-            className="form-select form-select-sm w-auto min-w-[160px]"
+            className="form-select w-full sm:w-auto sm:min-w-[190px] text-xs font-medium"
             value={issueModeFilter}
             onChange={(e) => setIssueModeFilter(e.target.value as 'ALL' | DocumentIssueMode)}
             aria-label="กรองตามโหมดเอกสาร"
@@ -1832,20 +1834,154 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
           </select>
         </div>
 
-        <div className="relative min-w-[240px] flex-1 max-w-sm">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="relative w-full lg:max-w-xs">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            className="form-control ps-5"
-            placeholder="ค้นหาเลขที่เอกสาร, Event Name, ลูกค้า..."
+            className="form-control !pl-9 w-full"
+            placeholder="ค้นหาเลขที่เอกสาร, Event, ลูกค้า..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Document Registry Table */}
-      <div className="figma-card overflow-hidden">
+      {/* Mobile Document Cards (< md) */}
+      <div className="md:hidden space-y-3">
+        {filteredDocs.length === 0 ? (
+          <div className="figma-card p-6 text-center space-y-3">
+            <Layers className="w-9 h-9 mx-auto text-slate-300" />
+            <div className="text-sm font-semibold text-slate-700">
+              ยังไม่มีเอกสารในหมวดนี้
+            </div>
+            <p className="text-xs text-slate-500 m-0 leading-relaxed">
+              แตะปุ่มด้านล่างเพื่อเริ่มต้นออกใบเสนอราคา ใบแจ้งหนี้ หรือใบเสร็จรับเงิน
+            </p>
+            <button
+              type="button"
+              onClick={() => startNewDocument('QT')}
+              className="figma-btn !rounded-xl min-h-[42px] inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 border-0"
+            >
+              <Plus className="w-4 h-4" />
+              สร้างใบเสนอราคา (QT)
+            </button>
+          </div>
+        ) : (
+          filteredDocs.map((d) => (
+            <div key={d.id} className="figma-card p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-bold font-mono-num text-sm text-slate-900">
+                    {d.docNumber}
+                    {(d.revisionNumber ?? 0) > 0 && (
+                      <span className="text-xs font-semibold text-blue-700 ms-1.5">
+                        · Rev.{d.revisionNumber}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-mono-num mt-0.5">
+                    {formatShortDate(d.docDate)} · {d.type}
+                    {d.refDocNumber ? ` · Ref: ${d.refDocNumber}` : ''}
+                  </div>
+                </div>
+                <span
+                  className={`text-[11px] font-bold uppercase shrink-0 ${
+                    d.status === 'paid'
+                      ? 'text-emerald-700'
+                      : d.status === 'cancelled'
+                        ? 'text-rose-600'
+                        : d.status === 'issued' || d.status === 'approved'
+                          ? 'text-blue-700'
+                          : 'text-slate-500'
+                  }`}
+                >
+                  {d.status}
+                </span>
+              </div>
+
+              <div className="text-xs space-y-0.5">
+                <div className="font-semibold text-slate-900">{d.customerSnapshot.companyName}</div>
+                <div className="text-slate-500">
+                  {d.eventName}
+                  {d.installmentInfo?.isInstallment
+                    ? ` · งวดที่ ${d.installmentInfo.currentPeriod}/${d.installmentInfo.totalPeriods}`
+                    : ''}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs font-mono-num">
+                <span className="text-slate-500">ยอดรวมสุทธิ</span>
+                <div className="text-right">
+                  <div className="font-bold text-sm text-slate-900">฿{formatTHB(d.grandTotal)}</div>
+                  {d.whtEnabled && (
+                    <div className="text-[11px] text-amber-700">
+                      รับสุทธิ ฿{formatTHB(d.netPayable)}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                {d.type === 'QT' && (
+                  <button
+                    type="button"
+                    onClick={() => handleConvertQTtoINV(d)}
+                    className="btn btn-sm btn-outline-primary min-h-[38px] inline-flex items-center gap-1 whitespace-nowrap flex-1 justify-center"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                    ออก INV
+                  </button>
+                )}
+                {d.type === 'INV' && (
+                  <button
+                    type="button"
+                    onClick={() => handleConvertINVtoREC(d)}
+                    className="btn btn-sm btn-outline-success min-h-[38px] inline-flex items-center gap-1 whitespace-nowrap flex-1 justify-center"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    ออกใบเสร็จ
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleCreateSpecialRevision(d)}
+                  className="btn btn-sm btn-outline-secondary min-h-[38px] inline-flex items-center gap-1 whitespace-nowrap"
+                >
+                  <History className="w-3.5 h-3.5" />
+                  ย้อนหลัง
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openPrintOnly(d)}
+                  className="btn btn-sm btn-light border min-h-[38px] min-w-[38px] inline-flex items-center justify-center"
+                  title="ดู/พิมพ์ A4"
+                >
+                  <Printer className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openEditor(d)}
+                  className="btn btn-sm btn-light border min-h-[38px] min-w-[38px] inline-flex items-center justify-center"
+                  title="แก้ไขเอกสาร"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteDoc(d)}
+                  className="btn btn-sm btn-light border text-danger min-h-[38px] min-w-[38px] inline-flex items-center justify-center"
+                  title="ลบ"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tablet & Desktop Document Registry Table (>= md) */}
+      <div className="hidden md:block figma-card overflow-hidden">
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0 text-sm">
             <thead className="table-light">
@@ -2001,10 +2137,10 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
       </div>
 
       {/* Quick Guidance Strip */}
-      <div className="p-4 rounded-xl border border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-700 shrink-0" />
-          <span>
+      <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+        <div className="flex items-start sm:items-center gap-2">
+          <Sparkles className="w-4 h-4 text-blue-700 shrink-0 mt-0.5 sm:mt-0" />
+          <span className="leading-relaxed">
             <strong>Workflow แนะนำ:</strong> สร้างใบเสนอราคา (QUO) → กดปุ่ม &ldquo;ออก INV&rdquo; เพื่อวางบิลเต็มจำนวนหรือแบ่งงวด → กด &ldquo;ออกใบเสร็จ&rdquo; เพื่อรับชำระเงินและบันทึกงบประมาณอัตโนมัติ
           </span>
         </div>

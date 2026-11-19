@@ -242,6 +242,27 @@
   transition: border-color 150ms var(--ease-figma), box-shadow 150ms var(--ease-figma);
 }
 
+.form-select {
+  padding-inline-end: 2.35rem !important;
+}
+
+.form-select.form-select-sm {
+  padding-inline-end: 2.15rem !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+}
+
 .form-control:focus, .form-select:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
