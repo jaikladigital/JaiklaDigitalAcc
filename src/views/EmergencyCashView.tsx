@@ -82,6 +82,7 @@ import {
   MultiPageScannerModal,
   MultiPageScanResult,
 } from '../components/MultiPageScannerModal';
+import { ThaiDatePickerField } from '../components/ThaiDatePickerField';
 import { UrgentRequestEditModal } from '../components/UrgentRequestEditModal';
 
 interface EmergencyCashViewProps {
@@ -1887,7 +1888,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                 </div>
 
                 {/* Project & Payment Date */}
-                <div className="col-md-7">
+                <div className="col-12 col-lg-7">
                   <label className="form-label">โปรเจกต์ / Event Name *</label>
                   <select
                     className="form-select"
@@ -1902,23 +1903,19 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                     ))}
                   </select>
                 </div>
-                <div className="col-md-5">
-                  <label className="form-label">
-                    วันที่ออกเงินสดจ่าย *
-                    {ocrUnreadableFields.includes('receiptDate') && (
-                      <span className="text-amber-700 ms-1">(พิมพ์เพิ่ม)</span>
-                    )}
-                  </label>
-                  <input
-                    type="date"
-                    className={`form-control font-mono-num ${
-                      ocrUnreadableFields.includes('receiptDate')
-                        ? 'border-amber-400 bg-amber-50/40'
-                        : ''
-                    }`}
-                    required
+                <div className="col-12 col-lg-5">
+                  <ThaiDatePickerField
+                    label={
+                      <>
+                        วันที่ออกเงินสดจ่าย (ว/ด/ป) *
+                        {ocrUnreadableFields.includes('receiptDate') && (
+                          <span className="text-amber-700 ms-1">(พิมพ์เพิ่ม)</span>
+                        )}
+                      </>
+                    }
                     value={form.paymentDate}
-                    onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
+                    onChange={(nextIso) => setForm({ ...form, paymentDate: nextIso })}
+                    highlighted={ocrUnreadableFields.includes('receiptDate')}
                   />
                 </div>
 

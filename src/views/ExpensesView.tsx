@@ -67,6 +67,7 @@ import {
   MultiPageScannerModal,
   MultiPageScanResult,
 } from '../components/MultiPageScannerModal';
+import { ThaiDatePickerField } from '../components/ThaiDatePickerField';
 import { sendEmergencyCashLineAlert } from '../utils/lineClient';
 import {
   FIELD_LABELS_TH,
@@ -1332,7 +1333,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                   </div>
                 </div>
 
-                <div className="col-md-7">
+                <div className="col-12 col-lg-7">
                   <label className="form-label">โปรเจกต์ / Event Name *</label>
                   <select
                     className="form-select"
@@ -1347,23 +1348,19 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     ))}
                   </select>
                 </div>
-                <div className="col-md-5">
-                  <label className="form-label">
-                    วันที่จ่ายเงิน *
-                    {ocrUnreadableFields.includes('receiptDate') && (
-                      <span className="text-amber-700 ms-1">(พิมพ์เพิ่ม)</span>
-                    )}
-                  </label>
-                  <input
-                    type="date"
-                    className={`form-control font-mono-num ${
-                      ocrUnreadableFields.includes('receiptDate')
-                        ? 'border-amber-400 bg-amber-50/40'
-                        : ''
-                    }`}
-                    required
+                <div className="col-12 col-lg-5">
+                  <ThaiDatePickerField
+                    label={
+                      <>
+                        วันที่จ่ายเงิน (ว/ด/ป) *
+                        {ocrUnreadableFields.includes('receiptDate') && (
+                          <span className="text-amber-700 ms-1">(พิมพ์เพิ่ม)</span>
+                        )}
+                      </>
+                    }
                     value={form.paymentDate}
-                    onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
+                    onChange={(nextIso) => setForm({ ...form, paymentDate: nextIso })}
+                    highlighted={ocrUnreadableFields.includes('receiptDate')}
                   />
                 </div>
 
@@ -1611,7 +1608,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
       {/* Quick Project Creation Modal */}
       {showQuickProjModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md shadow-xl animate-figma-modal overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-xl shadow-xl animate-figma-modal overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 m-0">สร้างโปรเจกต์ / Event ใหม่</h3>
               <button
@@ -1622,7 +1619,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleQuickProjectCreate} className="p-5 space-y-3">
+            <form onSubmit={handleQuickProjectCreate} className="p-5 space-y-3.5">
               <div>
                 <label className="form-label">ชื่อ Event / โครงการ *</label>
                 <input
@@ -1652,29 +1649,21 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                   ))}
                 </select>
               </div>
-              <div className="row g-2">
-                <div className="col-6">
-                  <label className="form-label">วันเริ่มงาน</label>
-                  <input
-                    type="date"
-                    className="form-control font-mono-num"
-                    value={quickProjForm.durationStart}
-                    onChange={(e) =>
-                      setQuickProjForm({ ...quickProjForm, durationStart: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="col-6">
-                  <label className="form-label">วันสิ้นสุด</label>
-                  <input
-                    type="date"
-                    className="form-control font-mono-num"
-                    value={quickProjForm.durationEnd}
-                    onChange={(e) =>
-                      setQuickProjForm({ ...quickProjForm, durationEnd: e.target.value })
-                    }
-                  />
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ThaiDatePickerField
+                  label="วันเริ่มงาน (ว/ด/ป)"
+                  value={quickProjForm.durationStart}
+                  onChange={(nextIso) =>
+                    setQuickProjForm({ ...quickProjForm, durationStart: nextIso })
+                  }
+                />
+                <ThaiDatePickerField
+                  label="วันสิ้นสุด (ว/ด/ป)"
+                  value={quickProjForm.durationEnd}
+                  onChange={(nextIso) =>
+                    setQuickProjForm({ ...quickProjForm, durationEnd: nextIso })
+                  }
+                />
               </div>
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button

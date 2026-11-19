@@ -29,13 +29,12 @@ import {
 } from '../types/accounting';
 import {
   calculateExpenseAmounts,
-  formatShortDate,
   formatTHB,
-  getDaysInMonth,
   getTodayISO,
   sanitizeDecimalInput,
 } from '../utils/formatters';
 import { toastError, toastSuccess } from '../utils/swal';
+import { ThaiDatePickerField } from './ThaiDatePickerField';
 
 interface UrgentRequestEditModalProps {
   request: UrgentExpenseRequest;
@@ -46,21 +45,6 @@ interface UrgentRequestEditModalProps {
   onSaved?: (updated: UrgentExpenseRequest) => void;
   onSavedAndProceedImport?: (updated: UrgentExpenseRequest) => void;
 }
-
-const THAI_SHORT_MONTHS = [
-  'ม.ค.',
-  'ก.พ.',
-  'มี.ค.',
-  'เม.ย.',
-  'พ.ค.',
-  'มิ.ย.',
-  'ก.ค.',
-  'ส.ค.',
-  'ก.ย.',
-  'ต.ค.',
-  'พ.ย.',
-  'ธ.ค.',
-];
 
 const STATUS_LABELS: Record<UrgentRequestStatus, { label: string; cls: string }> = {
   pending_review: {
@@ -80,23 +64,6 @@ const STATUS_LABELS: Record<UrgentRequestStatus, { label: string; cls: string }>
     cls: 'bg-slate-200 text-slate-700 border-slate-300',
   },
 };
-
-function parseDateParts(iso: string): { year: number; month: number; day: number } {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec((iso || '').trim());
-  if (match) {
-    return {
-      year: Number(match[1]),
-      month: Math.min(12, Math.max(1, Number(match[2]))),
-      day: Math.min(31, Math.max(1, Number(match[3]))),
-    };
-  }
-  const today = new Date();
-  return {
-    year: today.getFullYear(),
-    month: today.getMonth() + 1,
-    day: today.getDate(),
-  };
-}
 
 export const UrgentRequestEditModal: React.FC<UrgentRequestEditModalProps> = ({
   request,
@@ -137,28 +104,6 @@ export const UrgentRequestEditModal: React.FC<UrgentRequestEditModalProps> = ({
     request.receiptUrl ? 'receipt' : 'extra'
   );
   const [saving, setSaving] = useState(false);
-
-  const dateParts = useMemo(() => parseDateParts(paymentDate), [paymentDate]);
-  const daysInSelectedMonth = getDaysInMonth(dateParts.year, dateParts.month);
-  const selectedDay = Math.min(dateParts.day, daysInSelectedMonth);
-
-  const yearOptions = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const baseYears = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
-    if (!baseYears.includes(dateParts.year)) {
-      baseYears.push(dateParts.year);
-      baseYears.sort((a, b) => a - b);
-    }
-    return baseYears;
-  }, [dateParts.year]);
-
-  const updatePaymentDateParts = (nextYear: number, nextMonth: number, nextDay: number) => {
-    const maxDay = getDaysInMonth(nextYear, nextMonth);
-    const clampedDay = Math.min(Math.max(1, nextDay), maxDay);
-    setPaymentDate(
-      `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`
-    );
-  };
 
   const calculated = useMemo(
     () =>
@@ -560,7 +505,7 @@ export const UrgentRequestEditModal: React.FC<UrgentRequestEditModalProps> = ({
                 </div>
 
                 <div className="row g-2.5">
-                  <div className="col-md-7">
+                  <div className="col-12">
                     <label className="form-label text-xs mb-1">ชื่องาน / โปรเจกต์ / Event *</label>
                     <input
                       type="text"
@@ -589,64 +534,12 @@ export const UrgentRequestEditModal: React.FC<UrgentRequestEditModalProps> = ({
                     )}
                   </div>
 
-                  <div className="col-md-5">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <label className="form-label text-xs m-0">วันที่จ่ายเงินสด (ว/ด/ป) *</label>
-                      <button
-                        type="button"
-                        onClick={() => setPaymentDate(getTodayISO())}
-                        className="text-[11px] font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded px-1.5 py-0.5 cursor-pointer"
-                      >
-                        วันนี้
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-[0.9fr_1.3fr_1.2fr] gap-1">
-                      <select
-                        aria-label="วัน"
-                        className="form-select form-select-sm font-mono-num px-1.5 text-xs"
-                        value={selectedDay}
-                        onChange={(e) =>
-                          updatePaymentDateParts(dateParts.year, dateParts.month, Number(e.target.value))
-                        }
-                      >
-                        {Array.from({ length: daysInSelectedMonth }, (_, i) => i + 1).map((d) => (
-                          <option key={d} value={d}>
-                            {String(d).padStart(2, '0')}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        aria-label="เดือน"
-                        className="form-select form-select-sm px-1.5 text-xs"
-                        value={dateParts.month}
-                        onChange={(e) =>
-                          updatePaymentDateParts(dateParts.year, Number(e.target.value), selectedDay)
-                        }
-                      >
-                        {THAI_SHORT_MONTHS.map((mLabel, idx) => (
-                          <option key={mLabel} value={idx + 1}>
-                            {String(idx + 1).padStart(2, '0')} {mLabel}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        aria-label="ปี"
-                        className="form-select form-select-sm font-mono-num px-1.5 text-xs"
-                        value={dateParts.year}
-                        onChange={(e) =>
-                          updatePaymentDateParts(Number(e.target.value), dateParts.month, selectedDay)
-                        }
-                      >
-                        {yearOptions.map((y) => (
-                          <option key={y} value={y}>
-                            {y + 543}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="text-[11px] text-slate-500 mt-1 font-mono-num">
-                      แสดงผล: <strong className="text-slate-700">{formatShortDate(paymentDate)}</strong>
-                    </div>
+                  <div className="col-12">
+                    <ThaiDatePickerField
+                      label="วันที่จ่ายเงินสด (ว/ด/ป) *"
+                      value={paymentDate}
+                      onChange={setPaymentDate}
+                    />
                   </div>
 
                   {suppliers.length > 0 && (

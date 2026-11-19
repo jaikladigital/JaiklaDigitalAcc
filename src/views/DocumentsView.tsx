@@ -26,6 +26,7 @@ import {
   Search,
   Sparkles,
   Trash2,
+  X,
 } from 'lucide-react';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import {
@@ -57,6 +58,7 @@ import { formatThaiLineBreaks } from '../utils/thaiText';
 import { auditDocumentWht, validateThaiTaxId } from '../utils/whtCompliance';
 import { A4DocumentPreview } from '../components/A4DocumentPreview';
 import { ResponsiveA4Frame } from '../components/ResponsiveA4Frame';
+import { ThaiDatePickerField } from '../components/ThaiDatePickerField';
 import { EntityLegalType } from '../types/accounting';
 
 interface DocumentsViewProps {
@@ -219,6 +221,13 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
   const [draft, setDraft] = useState<AccountingDocument>(() =>
     recalculateDoc(buildBlankDoc('QT', documents, company))
   );
+  const [specialRevisionModal, setSpecialRevisionModal] = useState<{
+    sourceDoc: AccountingDocument;
+    issueMode: DocumentIssueMode;
+    docDate: string;
+    specialDeliveryDate: string;
+    reason: string;
+  } | null>(null);
 
   // Open new quotation directly if coming from CustomersView
   useEffect(() => {
@@ -478,72 +487,43 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
   };
 
   /** Clone / Create Special Revision, Backdated, or Advance Document while preserving original */
-  const handleCreateSpecialRevision = async (sourceDoc: AccountingDocument) => {
-    const { value: formValues } = await Swal.fire({
-      title: 'สร้างฉบับแก้ไข / เอกสารย้อนหลัง-ล่วงหน้า',
-      html: `
-        <div style="text-align:left;font-size:13.5px;color:#334155;">
-          <p style="margin-bottom:10px;">คัดลอกจากเอกสาร: <strong>${sourceDoc.docNumber}</strong> โดยเก็บต้นฉบับเดิมไว้</p>
-          <label style="font-weight:600;display:block;margin-bottom:4px;">วัตถุประสงค์ของเอกสารชุดนี้</label>
-          <select id="swal-issue-mode" class="form-select mb-2.5">
-            <option value="backdated">แก้ไขข้อมูลย้อนหลัง (Backdated Revision)</option>
-            <option value="advance">ทำเอกสารล่วงหน้าเพื่อส่งมอบลูกค้า (Advance Delivery)</option>
-            <option value="special">เอกสารกรณีพิเศษ / ปรับเงื่อนไขเฉพาะลูกค้า</option>
-          </select>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-            <div>
-              <label style="font-size:12px;font-weight:600;">วันที่บนเอกสาร</label>
-              <input id="swal-doc-date" type="date" value="${sourceDoc.docDate || getTodayISO()}" class="form-control form-control-sm" />
-            </div>
-            <div>
-              <label style="font-size:12px;font-weight:600;">วันที่ส่งมอบพิเศษ (ถ้ามี)</label>
-              <input id="swal-delivery-date" type="date" value="${sourceDoc.specialDeliveryDate || getTodayISO()}" class="form-control form-control-sm" />
-            </div>
-          </div>
-          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">เหตุผล / รายละเอียดกรณีพิเศษ</label>
-          <input id="swal-reason" type="text" placeholder="เช่น แก้ไขขอบเขตงานย้อนหลัง หรือออกวางบิลล่วงหน้าตามรอบปิดบัญชีลูกค้า" class="form-control form-control-sm" />
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'เปิดแก้ไขเอกสารฉบับใหม่',
-      cancelButtonText: 'ยกเลิก',
-      confirmButtonColor: '#1d4ed8',
-      customClass: { popup: 'jkd-swal-popup' },
-      preConfirm: () => {
-        const issueMode = (document.getElementById('swal-issue-mode') as HTMLSelectElement)
-          .value as DocumentIssueMode;
-        const docDate = (document.getElementById('swal-doc-date') as HTMLInputElement).value;
-        const specialDeliveryDate = (
-          document.getElementById('swal-delivery-date') as HTMLInputElement
-        ).value;
-        const reason = (document.getElementById('swal-reason') as HTMLInputElement).value;
-        return { issueMode, docDate, specialDeliveryDate, reason };
-      },
+  const handleCreateSpecialRevision = (sourceDoc: AccountingDocument) => {
+    setSpecialRevisionModal({
+      sourceDoc,
+      issueMode: 'backdated',
+      docDate: sourceDoc.docDate || getTodayISO(),
+      specialDeliveryDate: sourceDoc.specialDeliveryDate || getTodayISO(),
+      reason: '',
     });
+  };
 
-    if (!formValues) return;
+  const handleConfirmSpecialRevision = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!specialRevisionModal) return;
+    const { sourceDoc, issueMode, docDate, specialDeliveryDate, reason } = specialRevisionModal;
 
     const nextRev = (sourceDoc.revisionNumber ?? 0) + 1;
     const nextNumber =
-      formValues.issueMode === 'advance'
-        ? generateDocNumber(sourceDoc.type, documents, formValues.docDate)
+      issueMode === 'advance'
+        ? generateDocNumber(sourceDoc.type, documents, docDate)
         : buildRevisionDocNumber(sourceDoc.docNumber, nextRev);
 
     const cloned = recalculateDoc({
       ...JSON.parse(JSON.stringify(sourceDoc)),
       id: '',
       docNumber: nextNumber,
-      docDate: formValues.docDate || sourceDoc.docDate,
+      docDate: docDate || sourceDoc.docDate,
       refDocId: sourceDoc.id,
       refDocNumber: sourceDoc.docNumber,
-      issueMode: formValues.issueMode,
-      specialDeliveryDate: formValues.specialDeliveryDate || '',
+      issueMode,
+      specialDeliveryDate: specialDeliveryDate || '',
       revisionNumber: nextRev,
-      specialCaseReason: formValues.reason || '',
+      specialCaseReason: reason || '',
       showSpecialNoteOnPdf: false,
       status: 'draft' as DocumentStatus,
     });
 
+    setSpecialRevisionModal(null);
     setDraft(cloned);
     setMode('editor');
     toastSuccess(
@@ -843,7 +823,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                 1. ประเภทเอกสารและเลขที่อ้างอิง
               </h3>
               <div className="row g-3">
-                <div className="col-md-4">
+                <div className="col-12 col-sm-6">
                   <label className="form-label">ประเภทเอกสาร</label>
                   <select
                     className="form-select fw-semibold"
@@ -862,7 +842,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                     <option value="REC">ใบเสร็จรับเงิน (REC)</option>
                   </select>
                 </div>
-                <div className="col-md-4">
+                <div className="col-12 col-sm-6">
                   <label className="form-label">เลขที่เอกสาร</label>
                   <input
                     type="text"
@@ -871,7 +851,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                     onChange={(e) => setDraft({ ...draft, docNumber: e.target.value })}
                   />
                 </div>
-                <div className="col-md-4">
+                <div className="col-12 col-sm-6">
                   <label className="form-label">ฉบับเอกสาร</label>
                   <select
                     className="form-select"
@@ -884,27 +864,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                     <option value="copy">สำเนา / Copy</option>
                   </select>
                 </div>
-                <div className="col-md-4">
-                  <label className="form-label">วันที่เอกสาร</label>
-                  <input
-                    type="date"
-                    className="form-control font-mono-num"
-                    value={draft.docDate}
-                    onChange={(e) => setDraft({ ...draft, docDate: e.target.value })}
-                  />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">
-                    {draft.type === 'QT' ? 'ยืนราคาถึงวันที่' : 'วันครบกำหนด'}
-                  </label>
-                  <input
-                    type="date"
-                    className="form-control font-mono-num"
-                    value={draft.dueDate || ''}
-                    onChange={(e) => setDraft({ ...draft, dueDate: e.target.value })}
-                  />
-                </div>
-                <div className="col-md-4">
+                <div className="col-12 col-sm-6">
                   <label className="form-label">สถานะเอกสาร</label>
                   <select
                     className="form-select"
@@ -919,6 +879,21 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                     <option value="paid">ชำระเงินแล้ว (Paid)</option>
                     <option value="cancelled">ยกเลิก (Cancelled)</option>
                   </select>
+                </div>
+                <div className="col-12 col-lg-6">
+                  <ThaiDatePickerField
+                    label="วันที่เอกสาร (ว/ด/ป)"
+                    value={draft.docDate}
+                    onChange={(nextIso) => setDraft({ ...draft, docDate: nextIso })}
+                  />
+                </div>
+                <div className="col-12 col-lg-6">
+                  <ThaiDatePickerField
+                    label={draft.type === 'QT' ? 'ยืนราคาถึงวันที่ (ว/ด/ป)' : 'วันครบกำหนด (ว/ด/ป)'}
+                    value={draft.dueDate || ''}
+                    onChange={(nextIso) => setDraft({ ...draft, dueDate: nextIso })}
+                    allowEmpty
+                  />
                 </div>
               </div>
 
@@ -1036,16 +1011,15 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                     </button>
                   </div>
 
-                  <div className="row g-2">
-                    <div className="col-md-4">
-                      <label className="form-label text-xs">วันที่ส่งมอบพิเศษ (Special Delivery)</label>
-                      <input
-                        type="date"
-                        className="form-control form-control-sm font-mono-num"
+                  <div className="row g-3">
+                    <div className="col-12 col-lg-6">
+                      <ThaiDatePickerField
+                        label="วันที่ส่งมอบพิเศษ (Special Delivery)"
                         value={draft.specialDeliveryDate || ''}
-                        onChange={(e) =>
-                          setDraft({ ...draft, specialDeliveryDate: e.target.value })
+                        onChange={(nextIso) =>
+                          setDraft({ ...draft, specialDeliveryDate: nextIso })
                         }
+                        allowEmpty
                       />
                     </div>
                     <div className="col-md-4">
@@ -2145,6 +2119,97 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Special Revision / Backdated / Advance Modal */}
+      {specialRevisionModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-xl shadow-xl animate-figma-modal overflow-hidden my-auto">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 m-0">
+                  สร้างฉบับแก้ไข / เอกสารย้อนหลัง-ล่วงหน้า
+                </h3>
+                <p className="text-xs text-slate-500 m-0 mt-0.5">
+                  คัดลอกจากเอกสาร <strong>{specialRevisionModal.sourceDoc.docNumber}</strong> โดยเก็บต้นฉบับเดิมไว้
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSpecialRevisionModal(null)}
+                className="btn btn-sm btn-light border"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleConfirmSpecialRevision} className="p-5 space-y-3.5 text-sm">
+              <div>
+                <label className="form-label">วัตถุประสงค์ของเอกสารชุดนี้</label>
+                <select
+                  className="form-select"
+                  value={specialRevisionModal.issueMode}
+                  onChange={(e) =>
+                    setSpecialRevisionModal({
+                      ...specialRevisionModal,
+                      issueMode: e.target.value as DocumentIssueMode,
+                    })
+                  }
+                >
+                  <option value="backdated">แก้ไขข้อมูลย้อนหลัง (Backdated Revision)</option>
+                  <option value="advance">ทำเอกสารล่วงหน้าเพื่อส่งมอบลูกค้า (Advance Delivery)</option>
+                  <option value="special">เอกสารกรณีพิเศษ / ปรับเงื่อนไขเฉพาะลูกค้า</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ThaiDatePickerField
+                  label="วันที่บนเอกสาร (ว/ด/ป)"
+                  value={specialRevisionModal.docDate}
+                  onChange={(nextIso) =>
+                    setSpecialRevisionModal({ ...specialRevisionModal, docDate: nextIso })
+                  }
+                />
+                <ThaiDatePickerField
+                  label="วันที่ส่งมอบพิเศษ (ถ้ามี)"
+                  value={specialRevisionModal.specialDeliveryDate}
+                  onChange={(nextIso) =>
+                    setSpecialRevisionModal({
+                      ...specialRevisionModal,
+                      specialDeliveryDate: nextIso,
+                    })
+                  }
+                  allowEmpty
+                />
+              </div>
+
+              <div>
+                <label className="form-label">เหตุผล / รายละเอียดกรณีพิเศษ</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={specialRevisionModal.reason}
+                  onChange={(e) =>
+                    setSpecialRevisionModal({ ...specialRevisionModal, reason: e.target.value })
+                  }
+                  placeholder="เช่น แก้ไขขอบเขตงานย้อนหลัง หรือออกวางบิลล่วงหน้าตามรอบปิดบัญชีลูกค้า"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSpecialRevisionModal(null)}
+                  className="btn btn-light border"
+                >
+                  ยกเลิก
+                </button>
+                <button type="submit" className="btn btn-primary px-4 fw-semibold">
+                  เปิดแก้ไขเอกสารฉบับใหม่
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

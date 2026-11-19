@@ -36,7 +36,6 @@ import {
   calculateExpenseAmounts,
   formatShortDate,
   formatTHB,
-  getDaysInMonth,
   getTodayISO,
   sanitizeDecimalInput,
 } from '../utils/formatters';
@@ -47,6 +46,7 @@ import {
 import { toastError, toastSuccess } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
 import { FriendlyExpenseIconSVG, JaiklaLogoSVG } from './BrandAssets';
+import { ThaiDatePickerField } from './ThaiDatePickerField';
 
 interface PublicUrgentExpenseViewProps {
   company: CompanyProfile;
@@ -61,21 +61,6 @@ function buildPublicVoucherNo(): string {
 
 const SUBMITTER_STORAGE_KEY = 'jkd_urgent_submitter_profile_v1';
 const FORM_MEMORY_STORAGE_KEY = 'jkd_urgent_form_memory_v1';
-
-const THAI_SHORT_MONTHS = [
-  'ม.ค.',
-  'ก.พ.',
-  'มี.ค.',
-  'เม.ย.',
-  'พ.ค.',
-  'มิ.ย.',
-  'ก.ค.',
-  'ส.ค.',
-  'ก.ย.',
-  'ต.ค.',
-  'พ.ย.',
-  'ธ.ค.',
-];
 
 const DEFAULT_PROJECT_PRESETS = [
   'กิจกรรมสำนักงาน',
@@ -266,29 +251,6 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
     DEFAULT_DESCRIPTION_PRESETS,
     6
   );
-
-  const parsedDateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(paymentDate);
-  const selectedYear = parsedDateMatch ? Number(parsedDateMatch[1]) : new Date().getFullYear();
-  const selectedMonth = parsedDateMatch ? Number(parsedDateMatch[2]) : new Date().getMonth() + 1;
-  const selectedDay = parsedDateMatch ? Number(parsedDateMatch[3]) : new Date().getDate();
-  const daysInSelectedMonth = getDaysInMonth(selectedYear, selectedMonth);
-  const currentYear = new Date().getFullYear();
-  const yearOptions = [
-    currentYear - 2,
-    currentYear - 1,
-    currentYear,
-    currentYear + 1,
-    currentYear + 2,
-  ];
-
-  const updatePaymentDateParts = (nextYear: number, nextMonth: number, nextDay: number) => {
-    const maxDay = getDaysInMonth(nextYear, nextMonth);
-    const clampedDay = Math.min(Math.max(1, nextDay), maxDay);
-    const yyyy = String(nextYear).padStart(4, '0');
-    const mm = String(nextMonth).padStart(2, '0');
-    const dd = String(clampedDay).padStart(2, '0');
-    setPaymentDate(`${yyyy}-${mm}-${dd}`);
-  };
 
   const handleImagePick = async (
     target: 'receipt' | 'extra',
@@ -1194,7 +1156,7 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
             </div>
 
             <div className="row g-3">
-              <div className="col-md-7">
+              <div className="col-12 col-lg-7">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <label className="form-label m-0">ชื่องาน / โปรเจกต์ / Event *</label>
                   {formMemory.lastProjectName && (
@@ -1242,65 +1204,12 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                 </div>
               </div>
 
-              <div className="col-md-5">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <label className="form-label m-0">วันที่จ่ายเงินสด (ว/ด/ป) *</label>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentDate(getTodayISO())}
-                    className="text-[11px] font-semibold text-teal-700 hover:text-teal-900 bg-teal-50 border border-teal-200 rounded-md px-2 py-0.5 cursor-pointer"
-                  >
-                    วันนี้
-                  </button>
-                </div>
-                <div className="grid grid-cols-[0.9fr_1.3fr_1.2fr] gap-1.5">
-                  <select
-                    aria-label="วัน"
-                    className="form-select font-mono-num px-2 text-sm"
-                    value={selectedDay}
-                    onChange={(e) =>
-                      updatePaymentDateParts(selectedYear, selectedMonth, Number(e.target.value))
-                    }
-                  >
-                    {Array.from({ length: daysInSelectedMonth }, (_, idx) => idx + 1).map((d) => (
-                      <option key={d} value={d}>
-                        {String(d).padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    aria-label="เดือน"
-                    className="form-select px-2 text-sm"
-                    value={selectedMonth}
-                    onChange={(e) =>
-                      updatePaymentDateParts(selectedYear, Number(e.target.value), selectedDay)
-                    }
-                  >
-                    {THAI_SHORT_MONTHS.map((label, idx) => (
-                      <option key={label} value={idx + 1}>
-                        {String(idx + 1).padStart(2, '0')} {label}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    aria-label="ปี"
-                    className="form-select font-mono-num px-2 text-sm"
-                    value={selectedYear}
-                    onChange={(e) =>
-                      updatePaymentDateParts(Number(e.target.value), selectedMonth, selectedDay)
-                    }
-                  >
-                    {yearOptions.map((y) => (
-                      <option key={y} value={y}>
-                        {y + 543}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-1 font-mono-num">
-                  ว/ด/ป ที่เลือก: <strong className="text-slate-700">{formatShortDate(paymentDate)}</strong> (พ.ศ.{' '}
-                  {selectedYear + 543})
-                </div>
+              <div className="col-12 col-lg-5">
+                <ThaiDatePickerField
+                  label="วันที่จ่ายเงินสด (ว/ด/ป) *"
+                  value={paymentDate}
+                  onChange={setPaymentDate}
+                />
               </div>
 
               <div className="col-md-7">
