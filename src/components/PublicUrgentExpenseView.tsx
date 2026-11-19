@@ -12,8 +12,6 @@ import {
   MessageCircle,
   Phone,
   RotateCcw,
-  ScanLine,
-  Sparkles,
   Upload,
   UserCheck,
   Users,
@@ -32,11 +30,6 @@ import {
   ClientLineNotifyResult,
   sendPublicUrgentLineAlert,
 } from '../utils/lineClient';
-import {
-  FIELD_LABELS_TH,
-  scanReceiptFile,
-  scanReceiptFromDataUrlOrImage,
-} from '../utils/receiptOcrClient';
 import { toastError, toastSuccess } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
 import { FriendlyExpenseIconSVG, JaiklaLogoSVG } from './BrandAssets';
@@ -130,9 +123,7 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
 
   const [receiptUrl, setReceiptUrl] = useState('');
   const [extraPhotoUrl, setExtraPhotoUrl] = useState('');
-  const [ocrStatus, setOcrStatus] = useState<'idle' | 'scanning' | 'success' | 'partial' | 'error'>('idle');
-  const [ocrNote, setOcrNote] = useState('');
-  const [ocrMissing, setOcrMissing] = useState<string[]>([]);
+  const [processingTarget, setProcessingTarget] = useState<'receipt' | 'extra' | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [submittedReceipt, setSubmittedReceipt] = useState<{
@@ -150,126 +141,27 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
+    setProcessingTarget(target);
     try {
+      const compressed = await compressImageFileToLimit(file, 52000);
       if (target === 'receipt') {
-        setOcrStatus('scanning');
-        setOcrNote('กำลังอ่านข้อความและยอดเงินจากรูปใบเสร็จด้วย AI...');
-        const [compressed, ocrRes] = await Promise.all([
-          compressImageFileToLimit(file, 52000),
-          scanReceiptFile(file),
-        ]);
         setReceiptUrl(compressed);
-
-        if (!ocrRes.ok || !ocrRes.data) {
-          setOcrStatus('error');
-          setOcrNote(
-            ocrRes.error || 'ไม่สามารถอ่านข้อมูลจากรูปใบเสร็จได้ กรุณาพิมพ์รายละเอียดและยอดเงินด้วยตนเอง'
-          );
-          setOcrMissing(['vendorName', 'description', 'amount']);
-        } else {
-          const d = ocrRes.data;
-          const missing = new Set<string>(d.unreadableFields || []);
-          if (!d.vendorName) missing.add('vendorName');
-          if (!d.description) missing.add('description');
-          if (d.totalAmount <= 0 && d.subtotal <= 0) missing.add('amount');
-
-          const extractedAmt =
-            d.subtotal > 0
-              ? d.subtotal
-              : d.totalAmount > 0
-                ? Number((d.totalAmount - d.vatAmount).toFixed(2))
-                : 0;
-
-          if (d.vendorName && !vendorName) setVendorName(d.vendorName);
-          if (d.vendorTaxId && !vendorTaxId) setVendorTaxId(d.vendorTaxId);
-          if (d.receiptDate) setPaymentDate(d.receiptDate);
-          if (d.description && !description) setDescription(d.description);
-          if (extractedAmt > 0 && amount <= 0) {
-            setAmount(extractedAmt);
-            setAmountInput(String(extractedAmt));
-          }
-          if (d.vatRate > 0) setVatRate(d.vatRate);
-          if (d.whtRate > 0) setWhtRate(d.whtRate);
-
-          const missingArr = Array.from(missing);
-          setOcrMissing(missingArr);
-          if (!d.readable || missingArr.length > 0) {
-            setOcrStatus('partial');
-            setOcrNote(
-              d.readabilityNote ||
-                'อ่านข้อมูลได้บางส่วน กรุณาตรวจสอบและพิมพ์ข้อมูลเพิ่มเติมให้ครบถ้วน'
-            );
-          } else {
-            setOcrStatus('success');
-            setOcrNote(d.readabilityNote || 'ดึงข้อมูลเบื้องต้นจากใบเสร็จเรียบร้อยแล้ว');
-          }
-        }
-        toastSuccess('แนบรูปใบเสร็จแล้ว');
+        toastSuccess('แนบรูปใบเสร็จเรียบร้อยแล้ว');
       } else {
-        const compressed = await compressImageFileToLimit(file, 52000);
         setExtraPhotoUrl(compressed);
         toastSuccess('แนบรูปหน้างานเรียบร้อยแล้ว');
       }
     } catch (err) {
       toastError(
         'ไม่สามารถประมวลผลรูปภาพได้',
-        err instanceof Error ? err.message : 'กรุณาลองเลือกไฟล์ใหม่อีกครั้ง'
+        err instanceof Error && err.message
+          ? err.message
+          : 'กรุณาลองเลือกไฟล์ภาพ JPG/PNG หรือถ่ายภาพใหม่อีกครั้ง'
       );
     } finally {
-      e.target.value = '';
-    }
-  };
-
-  const handleRescanReceipt = async () => {
-    if (!receiptUrl) return;
-    setOcrStatus('scanning');
-    setOcrNote('กำลังสแกนข้อมูลจากรูปใบเสร็จด้วย AI อีกครั้ง...');
-    const ocrRes = await scanReceiptFromDataUrlOrImage(receiptUrl);
-    if (!ocrRes.ok || !ocrRes.data) {
-      setOcrStatus('error');
-      setOcrNote(
-        ocrRes.error || 'ไม่สามารถอ่านข้อมูลจากรูปใบเสร็จได้ กรุณาพิมพ์รายละเอียดและยอดเงินด้านล่างด้วยตนเอง'
-      );
-      setOcrMissing(['vendorName', 'description', 'amount']);
-      return;
-    }
-
-    const d = ocrRes.data;
-    const missing = new Set<string>(d.unreadableFields || []);
-    if (!d.vendorName) missing.add('vendorName');
-    if (!d.description) missing.add('description');
-    if (d.totalAmount <= 0 && d.subtotal <= 0) missing.add('amount');
-
-    const extractedAmt =
-      d.subtotal > 0
-        ? d.subtotal
-        : d.totalAmount > 0
-          ? Number((d.totalAmount - d.vatAmount).toFixed(2))
-          : 0;
-
-    if (d.vendorName && !vendorName) setVendorName(d.vendorName);
-    if (d.vendorTaxId && !vendorTaxId) setVendorTaxId(d.vendorTaxId);
-    if (d.receiptDate) setPaymentDate(d.receiptDate);
-    if (d.description && !description) setDescription(d.description);
-    if (extractedAmt > 0 && amount <= 0) {
-      setAmount(extractedAmt);
-      setAmountInput(String(extractedAmt));
-    }
-    if (d.vatRate > 0) setVatRate(d.vatRate);
-    if (d.whtRate > 0) setWhtRate(d.whtRate);
-
-    const missingArr = Array.from(missing);
-    setOcrMissing(missingArr);
-    if (!d.readable || missingArr.length > 0) {
-      setOcrStatus('partial');
-      setOcrNote(
-        d.readabilityNote ||
-          'อ่านข้อมูลได้บางส่วน กรุณาตรวจสอบและพิมพ์ข้อมูลเพิ่มเติมให้ครบถ้วน'
-      );
-    } else {
-      setOcrStatus('success');
-      setOcrNote(d.readabilityNote || 'ดึงข้อมูลเบื้องต้นจากใบเสร็จเรียบร้อยแล้ว');
+      setProcessingTarget(null);
     }
   };
 
@@ -287,9 +179,7 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
     setWhtRate(0);
     setReceiptUrl('');
     setExtraPhotoUrl('');
-    setOcrStatus('idle');
-    setOcrNote('');
-    setOcrMissing([]);
+    setProcessingTarget(null);
     setCopiedMsg(false);
   };
 
@@ -603,17 +493,16 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
             </button>
           </div>
 
-          {/* Step 1: Upload Receipt / OCR */}
-          <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3">
+          {/* Step 1: Upload Receipt / Evidence */}
+          <div className="p-4 rounded-xl border border-teal-200 bg-teal-50/30 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-900">
-                <Sparkles className="w-4 h-4 text-blue-700" />
-                1. ถ่ายรูปหรืออัปโหลดใบเสร็จ (AI ดึงยอดเงินให้อัตโนมัติ)
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-900">
+                <Camera className="w-4 h-4 text-teal-700 shrink-0" />
+                <span>1. ถ่ายรูปหรืออัปโหลดหลักฐานใบเสร็จ</span>
               </div>
-              {ocrStatus === 'scanning' && (
-                <span className="text-xs font-semibold text-blue-700 inline-flex items-center gap-1">
-                  <ScanLine className="w-3.5 h-3.5 animate-spin" />
-                  กำลังอ่านใบเสร็จ...
+              {processingTarget && (
+                <span className="text-xs font-semibold text-teal-700">
+                  กำลังเตรียมรูปภาพ...
                 </span>
               )}
             </div>
@@ -630,12 +519,7 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        setReceiptUrl('');
-                        setOcrStatus('idle');
-                        setOcrNote('');
-                        setOcrMissing([]);
-                      }}
+                      onClick={() => setReceiptUrl('')}
                       className="btn btn-sm btn-outline-danger w-full"
                     >
                       ลบรูปใบเสร็จนี้
@@ -712,58 +596,6 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                 )}
               </div>
             </div>
-
-            {ocrStatus !== 'idle' && (
-              <div
-                className={`p-3 rounded-xl border text-xs space-y-2 ${
-                  ocrStatus === 'scanning'
-                    ? 'bg-white border-blue-200 text-blue-800'
-                    : ocrStatus === 'success'
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                      : 'bg-amber-50/90 border-amber-300 text-amber-950'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="font-bold flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                    <span>
-                      {ocrStatus === 'scanning' && 'กำลังวิเคราะห์รูปใบเสร็จด้วย AI...'}
-                      {ocrStatus === 'success' && 'อ่านข้อมูลจากใบเสร็จสำเร็จ ✓'}
-                      {(ocrStatus === 'partial' || ocrStatus === 'error') &&
-                        'กรุณาตรวจสอบหรือพิมพ์ข้อมูลเพิ่มเติมด้านล่าง'}
-                    </span>
-                  </div>
-                  {receiptUrl && ocrStatus !== 'scanning' && (
-                    <button
-                      type="button"
-                      onClick={handleRescanReceipt}
-                      className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 text-[11px] font-semibold whitespace-nowrap self-start sm:self-auto"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      สแกนใหม่อีกครั้ง
-                    </button>
-                  )}
-                </div>
-                {ocrNote && <div className="leading-[1.55] opacity-90">{ocrNote}</div>}
-                {ocrMissing.length > 0 && (
-                  <div className="pt-1 border-t border-amber-200/80">
-                    <div className="font-semibold text-[11px] mb-1">
-                      ช่องที่แนะนำให้ตรวจสอบ/กรอกเพิ่ม:
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ocrMissing.map((f) => (
-                        <span
-                          key={f}
-                          className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-amber-300 text-[11px] font-medium text-amber-900"
-                        >
-                          {FIELD_LABELS_TH[f] || f}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Step 2: Submitter Identity & Callback Contacts */}
@@ -942,17 +774,10 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
               </div>
 
               <div className="col-md-7">
-                <label className="form-label">
-                  ร้านค้า / ผู้รับเงินปลายทาง
-                  {ocrMissing.includes('vendorName') && (
-                    <span className="text-amber-700 ms-1 text-xs">(พิมพ์เพิ่ม)</span>
-                  )}
-                </label>
+                <label className="form-label">ร้านค้า / ผู้รับเงินปลายทาง</label>
                 <input
                   type="text"
-                  className={`form-control ${
-                    ocrMissing.includes('vendorName') ? 'border-amber-400 bg-amber-50/40' : ''
-                  }`}
+                  className="form-control"
                   value={vendorName}
                   onChange={(e) => setVendorName(e.target.value)}
                   placeholder="เช่น ร้านอุปกรณ์ไฟฟ้า / ปั๊มน้ำมัน / ค่าวิน"
@@ -970,17 +795,10 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
               </div>
 
               <div className="col-12">
-                <label className="form-label">
-                  รายละเอียดค่าใช้จ่าย *
-                  {ocrMissing.includes('description') && (
-                    <span className="text-amber-700 ms-1 text-xs">(พิมพ์เพิ่ม)</span>
-                  )}
-                </label>
+                <label className="form-label">รายละเอียดค่าใช้จ่าย *</label>
                 <input
                   type="text"
-                  className={`form-control ${
-                    ocrMissing.includes('description') ? 'border-amber-400 bg-amber-50/40' : ''
-                  }`}
+                  className="form-control"
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -1000,19 +818,12 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
               </div>
 
               <div className="col-md-4">
-                <label className="form-label">
-                  จำนวนเงิน (ก่อน VAT) *
-                  {ocrMissing.includes('amount') && (
-                    <span className="text-amber-700 ms-1 text-xs">(พิมพ์เพิ่ม)</span>
-                  )}
-                </label>
+                <label className="form-label">จำนวนเงิน (ก่อน VAT) *</label>
                 <input
                   type="text"
                   inputMode="decimal"
                   required
-                  className={`form-control font-mono-num fw-bold ${
-                    ocrMissing.includes('amount') ? 'border-amber-400 bg-amber-50/40' : ''
-                  }`}
+                  className="form-control font-mono-num fw-bold"
                   placeholder="0.00"
                   value={amountInput}
                   onChange={(e) => {

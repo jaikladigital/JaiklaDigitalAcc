@@ -122,51 +122,141 @@ export async function testConnection(): Promise<boolean> {
  * Compresses an image file to a lightweight Data URL fallback when Firebase Storage
  * bucket permissions are restricted, or uploads directly to Firebase Storage.
  */
+function loadImageElementFromFile(file: File): Promise<{
+  img: HTMLImageElement;
+  cleanup: () => void;
+}> {
+  return new Promise((resolve, reject) => {
+    const objectUrl =
+      typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
+        ? URL.createObjectURL(file)
+        : '';
+
+    const loadViaFileReader = () => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => resolve({ img, cleanup: () => {} });
+        img.onerror = () =>
+          reject(new Error('ไม่สามารถเปิดไฟล์รูปภาพนี้ได้ กรุณาใช้ไฟล์ JPG หรือ PNG'));
+        img.src = String(reader.result || '');
+      };
+      reader.onerror = () =>
+        reject(new Error('ไม่สามารถอ่านไฟล์รูปภาพจากเครื่องได้ กรุณาลองเลือกไฟล์ใหม่อีกครั้ง'));
+      reader.readAsDataURL(file);
+    };
+
+    if (!objectUrl) {
+      loadViaFileReader();
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () =>
+      resolve({
+        img,
+        cleanup: () => {
+          try {
+            URL.revokeObjectURL(objectUrl);
+          } catch {
+            // ignore
+          }
+        },
+      });
+    img.onerror = () => {
+      try {
+        URL.revokeObjectURL(objectUrl);
+      } catch {
+        // ignore
+      }
+      loadViaFileReader();
+    };
+    img.src = objectUrl;
+  });
+}
+
+function encodeCanvasCompact(
+  source: HTMLImageElement | HTMLCanvasElement,
+  srcWidth: number,
+  srcHeight: number,
+  maxWidth: number,
+  quality: number
+): { canvas: HTMLCanvasElement; dataUrl: string } {
+  const scale = Math.min(1, maxWidth / Math.max(1, srcWidth));
+  const targetW = Math.max(1, Math.round(srcWidth * scale));
+  const targetH = Math.max(1, Math.round(srcHeight * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('เบราว์เซอร์ไม่รองรับการประมวลผลรูปภาพ');
+  }
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, targetW, targetH);
+  ctx.drawImage(source, 0, 0, targetW, targetH);
+
+  const jpegUrl = canvas.toDataURL('image/jpeg', quality);
+  const webpUrl = canvas.toDataURL('image/webp', quality);
+  const bestUrl =
+    webpUrl.startsWith('data:image/webp') && webpUrl.length < jpegUrl.length
+      ? webpUrl
+      : jpegUrl;
+  return { canvas, dataUrl: bestUrl };
+}
+
 async function compressImageToDataUrl(
   file: File,
   maxWidth = 800,
   quality = 0.72
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const scale = Math.min(1, maxWidth / img.width);
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(String(reader.result));
-          return;
-        }
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/webp', quality));
-      };
-      img.onerror = () => resolve(String(reader.result));
-      img.src = String(reader.result);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  const { img, cleanup } = await loadImageElementFromFile(file);
+  try {
+    const srcW = img.naturalWidth || img.width;
+    const srcH = img.naturalHeight || img.height;
+    return encodeCanvasCompact(img, srcW, srcH, maxWidth, quality).dataUrl;
+  } finally {
+    cleanup();
+  }
 }
 
 export async function compressImageFileToLimit(
   file: File,
   maxLen = 52000
 ): Promise<string> {
-  const attempts: Array<[number, number]> = [
-    [820, 0.72],
-    [600, 0.62],
-    [440, 0.52],
-    [320, 0.42],
-  ];
-  for (const [w, q] of attempts) {
-    const out = await compressImageToDataUrl(file, w, q);
-    if (out.length <= maxLen) return out;
+  const { img, cleanup } = await loadImageElementFromFile(file);
+  try {
+    const srcW = img.naturalWidth || img.width;
+    const srcH = img.naturalHeight || img.height;
+    const attempts: Array<[number, number]> = [
+      [820, 0.72],
+      [600, 0.62],
+      [440, 0.52],
+      [320, 0.42],
+    ];
+    let currentSource: HTMLImageElement | HTMLCanvasElement = img;
+    let currentW = srcW;
+    let currentH = srcH;
+    let lastUrl = '';
+
+    for (const [w, q] of attempts) {
+      const { canvas, dataUrl } = encodeCanvasCompact(
+        currentSource,
+        currentW,
+        currentH,
+        w,
+        q
+      );
+      lastUrl = dataUrl;
+      if (dataUrl.length <= maxLen) return dataUrl;
+      currentSource = canvas;
+      currentW = canvas.width;
+      currentH = canvas.height;
+    }
+    return encodeCanvasCompact(currentSource, currentW, currentH, 240, 0.35).dataUrl || lastUrl;
+  } finally {
+    cleanup();
   }
-  return compressImageToDataUrl(file, 240, 0.35);
 }
 
 export async function uploadAssetFile(
