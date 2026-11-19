@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import {
   AlertTriangle,
+  Building2,
   Camera,
   CheckCircle2,
   ClipboardCheck,
@@ -70,6 +71,12 @@ import {
 import { ThaiDatePickerField } from '../components/ThaiDatePickerField';
 import { sendEmergencyCashLineAlert } from '../utils/lineClient';
 import {
+  checkOverheadReadiness,
+  detectNonDeductibleVatRisk,
+  ensureCompanyOverheadInfrastructure,
+  suggestCategoryForExpenseText,
+} from '../utils/companyOverheadSetup';
+import {
   FIELD_LABELS_TH,
   scanReceiptFile,
   scanReceiptFromDataUrlOrImage,
@@ -115,6 +122,13 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   const [ocrStatus, setOcrStatus] = useState<'idle' | 'scanning' | 'success' | 'partial' | 'error'>('idle');
   const [ocrNote, setOcrNote] = useState('');
   const [ocrUnreadableFields, setOcrUnreadableFields] = useState<string[]>([]);
+  const [settingUpOverhead, setSettingUpOverhead] = useState(false);
+  const [vatNonDeductible, setVatNonDeductible] = useState(false);
+
+  const overheadReadiness = useMemo(
+    () => checkOverheadReadiness(company, customers, projects, categories),
+    [company, customers, projects, categories]
+  );
 
   // Quick Project modal if user has no project yet
   const [showQuickProjModal, setShowQuickProjModal] = useState(false);
@@ -175,9 +189,59 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     );
   }, [filteredExpenses]);
 
-  const computedVat = Number(((form.amount * form.vatRate) / 100).toFixed(2));
+  const rawVat = Number(((form.amount * form.vatRate) / 100).toFixed(2));
+  const foldNonDeductibleVat = vatNonDeductible && form.vatRate > 0;
+  const effectiveExpenseAmount = foldNonDeductibleVat
+    ? Number((form.amount + rawVat).toFixed(2))
+    : form.amount;
+  const computedVat = foldNonDeductibleVat ? 0 : rawVat;
   const computedWht = Number(((form.amount * form.whtRate) / 100).toFixed(2));
-  const computedNetPaid = Number((form.amount + computedVat - computedWht).toFixed(2));
+  const computedNetPaid = Number((effectiveExpenseAmount + computedVat - computedWht).toFixed(2));
+
+  const handleSetupOverheadInfrastructure = async (selectInModal?: 'selling' | 'admin') => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return null;
+    setSettingUpOverhead(true);
+    try {
+      const infra = await ensureCompanyOverheadInfrastructure({
+        uid,
+        teamUids,
+        company,
+        customers,
+        projects,
+        categories,
+      });
+      if (infra.createdCount > 0) {
+        toastSuccess(
+          'ตั้งค่าโปรเจกต์กลาง & หมวดหมู่บริษัทเรียบร้อย',
+          `พร้อมบันทึกค่าใช้จ่ายขาย/เดินทางพบลูกค้า และกิจกรรมสำนักงาน (${infra.createdCount} รายการ)`
+        );
+      } else {
+        toastSuccess('โปรเจกต์กลาง & หมวดหมู่บริษัทพร้อมใช้งานครบถ้วนแล้ว');
+      }
+      if (selectInModal) {
+        const targetProjId =
+          selectInModal === 'selling' ? infra.sellingProjectId : infra.adminProjectId;
+        const suggestedCat = suggestCategoryForExpenseText(
+          form.description || '',
+          infra.createdCategories,
+          selectInModal
+        );
+        setForm((prev) => ({
+          ...prev,
+          projectId: targetProjId,
+          categoryId: suggestedCat?.id || prev.categoryId,
+          categoryName: suggestedCat?.name || prev.categoryName,
+        }));
+      }
+      return infra;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'projects');
+      return null;
+    } finally {
+      setSettingUpOverhead(false);
+    }
+  };
 
   const openAddExpense = () => {
     if (projects.length === 0) {
@@ -222,6 +286,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
     setOcrNote('');
     setOcrUnreadableFields([]);
     setAmountInput('');
+    setVatNonDeductible(false);
     setShowModal(true);
   };
 
@@ -427,6 +492,11 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             : 'PND53'
         : 'NONE';
 
+    const finalDescription =
+      foldNonDeductibleVat && !description.includes('VAT ต้องห้าม')
+        ? clampString(`${description} [รวม VAT ต้องห้ามเป็นค่าใช้จ่าย]`, FIELD_LIMITS.description)
+        : description;
+
     try {
       await addDoc(collection(db, 'expenses'), {
         projectId: proj.id,
@@ -440,9 +510,9 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
         whtIncomeCode: clampString(form.whtIncomeCode, 60),
         categoryId: form.categoryId,
         categoryName: clampString(form.categoryName, 150),
-        description,
-        amount: Number(form.amount) || 0,
-        vatRate: Number(form.vatRate) || 0,
+        description: finalDescription,
+        amount: effectiveExpenseAmount,
+        vatRate: foldNonDeductibleVat ? 0 : Number(form.vatRate) || 0,
         vatAmount: computedVat,
         whtRate: Number(form.whtRate) || 0,
         whtAmount: computedWht,
@@ -544,6 +614,17 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             <Plus className="w-4 h-4 shrink-0" />
             สร้างโปรเจกต์ใหม่
           </button>
+          {!overheadReadiness.isFullyReady && (
+            <button
+              type="button"
+              disabled={settingUpOverhead}
+              onClick={() => handleSetupOverheadInfrastructure()}
+              className="figma-btn col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 whitespace-nowrap"
+            >
+              <Building2 className="w-4 h-4 shrink-0" />
+              {settingUpOverhead ? 'กำลังสร้าง...' : 'ตั้งค่าโปรเจกต์กลางบริษัท'}
+            </button>
+          )}
           <button
             type="button"
             onClick={openAddExpense}
@@ -1334,7 +1415,20 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                 </div>
 
                 <div className="col-12 col-lg-7">
-                  <label className="form-label">โปรเจกต์ / Event Name *</label>
+                  <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                    <label className="form-label mb-0">โปรเจกต์ / ศูนย์ต้นทุน (Event Name) *</label>
+                    {!overheadReadiness.isFullyReady && (
+                      <button
+                        type="button"
+                        disabled={settingUpOverhead}
+                        onClick={() => handleSetupOverheadInfrastructure('selling')}
+                        className="text-[11px] font-semibold text-indigo-700 hover:underline inline-flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        {settingUpOverhead ? 'กำลังสร้าง...' : '+ สร้างโปรเจกต์กลางบริษัท'}
+                      </button>
+                    )}
+                  </div>
                   <select
                     className="form-select"
                     required
@@ -1362,6 +1456,30 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     onChange={(nextIso) => setForm({ ...form, paymentDate: nextIso })}
                     highlighted={ocrUnreadableFields.includes('receiptDate')}
                   />
+                </div>
+
+                <div className="col-12">
+                  <label className="form-label">หมวดหมู่ค่าใช้จ่าย (สำหรับลงบัญชี &amp; งบกำไรขาดทุน)</label>
+                  <select
+                    className="form-select"
+                    value={form.categoryId}
+                    onChange={(e) => {
+                      const cat = categories.find((c) => c.id === e.target.value);
+                      setForm({
+                        ...form,
+                        categoryId: cat?.id || e.target.value,
+                        categoryName: cat?.name || '',
+                        whtRate: cat?.defaultWhtRate ?? form.whtRate,
+                      });
+                    }}
+                  >
+                    {categories.length === 0 && <option value="">ค่าใช้จ่ายทั่วไป</option>}
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="col-md-6">
@@ -1569,8 +1687,33 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                   />
                 </div>
 
+                {form.vatRate > 0 && (
+                  <div className="col-12">
+                    <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-amber-200 bg-amber-50/70 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="form-check-input mt-0.5"
+                        checked={vatNonDeductible}
+                        onChange={(e) => setVatNonDeductible(e.target.checked)}
+                      />
+                      <span className="text-xs text-amber-950">
+                        <strong className="block">
+                          VAT ต้องห้าม — รวมยอด VAT (฿{formatTHB(rawVat)}) เข้าเป็นค่าใช้จ่ายทั้งก้อน
+                        </strong>
+                        ใช้กรณีชาร์จ EV / น้ำมันรถส่วนตัว / รถยนต์นั่ง ≤ 10 ที่นั่ง / ค่ารับรองลูกค้า (ไม่นำไปขอคืน ภ.พ.30)
+                        {detectNonDeductibleVatRisk(`${form.description} ${form.supplierName}`).likelyNonDeductible && (
+                          <span className="text-amber-800 font-semibold ms-1">(แนะนำสำหรับรายการนี้)</span>
+                        )}
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <div className="col-12">
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-wrap justify-between gap-2 text-xs font-mono-num">
+                    <span>
+                      ฐานค่าใช้จ่ายลงบัญชี: ฿{formatTHB(effectiveExpenseAmount)}
+                    </span>
                     <span>VAT ซื้อ: ฿{formatTHB(computedVat)}</span>
                     <span>
                       หัก ณ ที่จ่าย ({form.payeeEntityType === 'individual' ? 'ภ.ง.ด. 3' : 'ภ.ง.ด. 53'}): -฿

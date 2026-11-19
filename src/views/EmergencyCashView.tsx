@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import {
   AlertTriangle,
+  Building2,
   Camera,
   CheckCircle2,
   Clock,
@@ -84,6 +85,13 @@ import {
 } from '../components/MultiPageScannerModal';
 import { ThaiDatePickerField } from '../components/ThaiDatePickerField';
 import { UrgentRequestEditModal } from '../components/UrgentRequestEditModal';
+import { UrgentRequestImportModal } from '../components/UrgentRequestImportModal';
+import {
+  checkOverheadReadiness,
+  detectNonDeductibleVatRisk,
+  ensureCompanyOverheadInfrastructure,
+  suggestCategoryForExpenseText,
+} from '../utils/companyOverheadSetup';
 
 interface EmergencyCashViewProps {
   expenses: Expense[];
@@ -129,9 +137,14 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
 
   const [importingRequest, setImportingRequest] = useState<UrgentExpenseRequest | null>(null);
   const [editingUrgentRequest, setEditingUrgentRequest] = useState<UrgentExpenseRequest | null>(null);
-  const [importProjectId, setImportProjectId] = useState('');
-  const [importingBusy, setImportingBusy] = useState(false);
+  const [settingUpOverhead, setSettingUpOverhead] = useState(false);
+  const [vatNonDeductible, setVatNonDeductible] = useState(false);
   const [showRichMenuGuide, setShowRichMenuGuide] = useState(false);
+
+  const overheadReadiness = useMemo(
+    () => checkOverheadReadiness(company, customers, projects, categories),
+    [company, customers, projects, categories]
+  );
 
   const urgentFormUrl =
     typeof window !== 'undefined'
@@ -232,9 +245,59 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
     );
   }, [emergencyExpenses]);
 
-  const computedVat = Number(((form.amount * form.vatRate) / 100).toFixed(2));
+  const rawVat = Number(((form.amount * form.vatRate) / 100).toFixed(2));
+  const foldNonDeductibleVat = vatNonDeductible && form.vatRate > 0;
+  const effectiveExpenseAmount = foldNonDeductibleVat
+    ? Number((form.amount + rawVat).toFixed(2))
+    : form.amount;
+  const computedVat = foldNonDeductibleVat ? 0 : rawVat;
   const computedWht = Number(((form.amount * form.whtRate) / 100).toFixed(2));
-  const computedNetPaid = Number((form.amount + computedVat - computedWht).toFixed(2));
+  const computedNetPaid = Number((effectiveExpenseAmount + computedVat - computedWht).toFixed(2));
+
+  const handleSetupOverheadInfrastructure = async (selectInModal?: 'selling' | 'admin') => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return null;
+    setSettingUpOverhead(true);
+    try {
+      const infra = await ensureCompanyOverheadInfrastructure({
+        uid,
+        teamUids,
+        company,
+        customers,
+        projects,
+        categories,
+      });
+      if (infra.createdCount > 0) {
+        toastSuccess(
+          'ตั้งค่าโปรเจกต์กลาง & หมวดหมู่บริษัทเรียบร้อย',
+          `พร้อมบันทึกค่าใช้จ่ายขาย/เดินทางพบลูกค้า และกิจกรรมสำนักงาน (${infra.createdCount} รายการ)`
+        );
+      } else {
+        toastSuccess('โปรเจกต์กลาง & หมวดหมู่บริษัทพร้อมใช้งานครบถ้วนแล้ว');
+      }
+      if (selectInModal) {
+        const targetProjId =
+          selectInModal === 'selling' ? infra.sellingProjectId : infra.adminProjectId;
+        const suggestedCat = suggestCategoryForExpenseText(
+          form.description || '',
+          infra.createdCategories,
+          selectInModal
+        );
+        setForm((prev) => ({
+          ...prev,
+          projectId: targetProjId,
+          categoryId: suggestedCat?.id || prev.categoryId,
+          categoryName: suggestedCat?.name || prev.categoryName,
+        }));
+      }
+      return infra;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'projects');
+      return null;
+    } finally {
+      setSettingUpOverhead(false);
+    }
+  };
 
   const openCreateModal = () => {
     if (projects.length === 0) {
@@ -285,6 +348,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
     setOcrNote('');
     setOcrUnreadableFields([]);
     setAmountInput('');
+    setVatNonDeductible(false);
     setShowModal(true);
   };
 
@@ -322,6 +386,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
     setOcrStatus('idle');
     setOcrNote('');
     setOcrUnreadableFields([]);
+    setVatNonDeductible(false);
     setShowModal(true);
   };
 
@@ -552,6 +617,11 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
               : 'PND53'
           : 'NONE';
 
+      const finalDescription =
+        foldNonDeductibleVat && !description.includes('VAT ต้องห้าม')
+          ? clampString(`${description} [รวม VAT ต้องห้ามเป็นค่าใช้จ่าย]`, FIELD_LIMITS.description)
+          : description;
+
       const payloadData = {
         projectId: proj.id,
         eventName: clampString(proj.eventName, FIELD_LIMITS.eventName),
@@ -564,9 +634,9 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
         whtIncomeCode: clampString(form.whtIncomeCode, 60),
         categoryId: form.categoryId,
         categoryName: clampString(form.categoryName || 'ค่าใช้จ่ายเงินสดฉุกเฉิน', 150),
-        description,
-        amount: Number(form.amount) || 0,
-        vatRate: Number(form.vatRate) || 0,
+        description: finalDescription,
+        amount: effectiveExpenseAmount,
+        vatRate: foldNonDeductibleVat ? 0 : Number(form.vatRate) || 0,
         vatAmount: computedVat,
         whtRate: Number(form.whtRate) || 0,
         whtAmount: computedWht,
@@ -676,107 +746,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
   };
 
   const openImportUrgentModal = (req: UrgentExpenseRequest) => {
-    if (projects.length === 0) {
-      toastError(
-        'ยังไม่มีโปรเจกต์ในระบบ',
-        'กรุณาสร้างลูกค้าและโปรเจกต์อย่างน้อย 1 รายการก่อนนำเข้าคำขอเบิกด่วน'
-      );
-      return;
-    }
-    const matched = projects.find(
-      (p) =>
-        p.eventName.toLowerCase().includes(req.projectName.toLowerCase()) ||
-        req.projectName.toLowerCase().includes(p.eventName.toLowerCase())
-    );
-    setImportProjectId(matched?.id || projects[0].id);
     setImportingRequest(req);
-  };
-
-  const handleConfirmImportUrgent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!importingRequest) return;
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-    const proj = projects.find((p) => p.id === importProjectId);
-    if (!proj) {
-      toastError('กรุณาเลือกโปรเจกต์');
-      return;
-    }
-
-    setImportingBusy(true);
-    const activeTeam = Array.from(new Set([uid, ...teamUids])).slice(0, FIELD_LIMITS.maxTeamUids);
-
-    try {
-      const contactSummary = [
-        importingRequest.submitterPhone || '',
-        importingRequest.submitterLineId ? `LINE: ${importingRequest.submitterLineId}` : '',
-      ]
-        .filter(Boolean)
-        .join(' · ');
-
-      const resolvedFormType: WhtFormType =
-        importingRequest.whtAmount > 0 ? 'PND53' : 'NONE';
-
-      const expenseRef = await addDoc(collection(db, 'expenses'), {
-        projectId: proj.id,
-        eventName: clampString(proj.eventName, FIELD_LIMITS.eventName),
-        supplierId: '',
-        supplierName: clampString(
-          importingRequest.vendorName || importingRequest.payerName,
-          FIELD_LIMITS.companyName
-        ),
-        supplierTaxId: clampString(importingRequest.vendorTaxId || '', FIELD_LIMITS.taxId),
-        supplierAddress: '',
-        payeeEntityType: 'corporate',
-        whtFormType: resolvedFormType,
-        whtIncomeCode: '40(8)_service_3',
-        categoryId: categories[0]?.id || '',
-        categoryName: clampString(categories[0]?.name || 'ค่าใช้จ่ายเงินสดฉุกเฉิน', 150),
-        description: clampString(
-          `[${importingRequest.projectName}] ${importingRequest.description}`,
-          FIELD_LIMITS.description
-        ),
-        amount: Number(importingRequest.amount) || 0,
-        vatRate: Number(importingRequest.vatRate) || 0,
-        vatAmount: Number(importingRequest.vatAmount) || 0,
-        whtRate: Number(importingRequest.whtRate) || 0,
-        whtAmount: Number(importingRequest.whtAmount) || 0,
-        netPaid: Number(importingRequest.netPaid) || 0,
-        paymentDate: importingRequest.paymentDate || getTodayISO(),
-        monthYear: getMonthYearFromDate(importingRequest.paymentDate || getTodayISO()),
-        receiptUrl: importingRequest.receiptUrl || '',
-        extraPhotoUrl: importingRequest.extraPhotoUrl || '',
-        wht50TawiNo: '',
-        wht50TawiIssued: false,
-        incomeType50Tawi: 'ค่าใช้จ่ายเงินสดฉุกเฉิน / สำรองจ่ายหน้างาน',
-        isEmergencyCash: true,
-        emergencyVoucherNo: importingRequest.voucherNo,
-        payerType: importingRequest.payerType,
-        payerName: clampString(importingRequest.payerName, FIELD_LIMITS.companyName),
-        payerPhone: clampString(contactSummary, FIELD_LIMITS.phone),
-        urgencyReason: clampString(importingRequest.urgencyReason || '', 500),
-        emergencyStatus: 'approved' as EmergencyCashStatus,
-        lineNotifiedAt: importingRequest.lineNotifiedAt || '',
-        lineNotifyChannel: importingRequest.lineNotifyChannel || 'public_urgent',
-        createdBy: uid,
-        teamUids: activeTeam,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-
-      await updateDoc(doc(db, 'urgent_requests', importingRequest.id), {
-        status: 'imported',
-        importedExpenseId: expenseRef.id,
-        updatedAt: serverTimestamp(),
-      });
-
-      setImportingRequest(null);
-      toastSuccess(`อนุมัติและนำเข้า ${importingRequest.voucherNo} เข้าบัญชีรายจ่ายเรียบร้อย`);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `urgent_requests/${importingRequest.id}`);
-    } finally {
-      setImportingBusy(false);
-    }
   };
 
   const handleRejectUrgentRequest = async (req: UrgentExpenseRequest) => {
@@ -958,12 +928,27 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                 คำขอเบิกด่วนจากภายนอก (ส่งโดยไม่ต้องเข้าสู่ระบบ)
               </h2>
               <p className="text-xs text-slate-600 mt-0.5 mb-0 thai-prose">
-                ตรวจสอบข้อมูลติดต่อกลับ (LINE ID / อีเมล / เบอร์โทร) และอนุมัตินำเข้าบัญชีรายจ่ายของโปรเจกต์
+                ตรวจสอบข้อมูลติดต่อกลับ (LINE ID / อีเมล / เบอร์โทร) และอนุมัตินำเข้าบัญชีรายจ่ายของโปรเจกต์หรือค่าใช้จ่ายทั่วไปของบริษัท
               </p>
             </div>
-            <span className="text-xs font-mono-num font-bold text-amber-800 shrink-0">
-              รอตรวจสอบ {urgentRequests.filter((r) => r.status === 'pending_review').length} / ทั้งหมด {urgentRequests.length} รายการ
-            </span>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {!overheadReadiness.isFullyReady && (
+                <button
+                  type="button"
+                  disabled={settingUpOverhead}
+                  onClick={() => handleSetupOverheadInfrastructure()}
+                  className="btn btn-sm btn-outline-primary inline-flex items-center gap-1 text-xs bg-white"
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  {settingUpOverhead
+                    ? 'กำลังตั้งค่า...'
+                    : 'ตั้งค่าโปรเจกต์กลางบริษัท (ขาย/สำนักงาน)'}
+                </button>
+              )}
+              <span className="text-xs font-mono-num font-bold text-amber-800">
+                รอตรวจสอบ {urgentRequests.filter((r) => r.status === 'pending_review').length} / ทั้งหมด {urgentRequests.length} รายการ
+              </span>
+            </div>
           </div>
 
           {/* Mobile Urgent Request Cards */}
@@ -1889,7 +1874,20 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
 
                 {/* Project & Payment Date */}
                 <div className="col-12 col-lg-7">
-                  <label className="form-label">โปรเจกต์ / Event Name *</label>
+                  <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                    <label className="form-label mb-0">โปรเจกต์ / ศูนย์ต้นทุน (Event Name) *</label>
+                    {!overheadReadiness.isFullyReady && (
+                      <button
+                        type="button"
+                        disabled={settingUpOverhead}
+                        onClick={() => handleSetupOverheadInfrastructure('selling')}
+                        className="text-[11px] font-semibold text-indigo-700 hover:underline inline-flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        {settingUpOverhead ? 'กำลังสร้าง...' : '+ สร้างโปรเจกต์กลางบริษัท'}
+                      </button>
+                    )}
+                  </div>
                   <select
                     className="form-select"
                     required
@@ -1917,6 +1915,32 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                     onChange={(nextIso) => setForm({ ...form, paymentDate: nextIso })}
                     highlighted={ocrUnreadableFields.includes('receiptDate')}
                   />
+                </div>
+
+                {/* Expense Category Selector */}
+                <div className="col-12">
+                  <label className="form-label">หมวดหมู่ค่าใช้จ่าย (สำหรับลงบัญชี &amp; งบกำไรขาดทุน)</label>
+                  <select
+                    className="form-select"
+                    value={form.categoryId}
+                    onChange={(e) => {
+                      const cat = categories.find((c) => c.id === e.target.value);
+                      setForm({
+                        ...form,
+                        categoryId: cat?.id || e.target.value,
+                        categoryName: cat?.name || '',
+                      });
+                    }}
+                  >
+                    {categories.length === 0 && (
+                      <option value="">ค่าใช้จ่ายเงินสดฉุกเฉิน</option>
+                    )}
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Optional supplier quick-pick */}
@@ -2136,9 +2160,34 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                   />
                 </div>
 
+                {form.vatRate > 0 && (
+                  <div className="col-12">
+                    <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-amber-200 bg-amber-50/70 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="form-check-input mt-0.5"
+                        checked={vatNonDeductible}
+                        onChange={(e) => setVatNonDeductible(e.target.checked)}
+                      />
+                      <span className="text-xs text-amber-950">
+                        <strong className="block">
+                          VAT ต้องห้าม — รวมยอด VAT (฿{formatTHB(rawVat)}) เข้าเป็นค่าใช้จ่ายทั้งก้อน
+                        </strong>
+                        ใช้กรณีชาร์จ EV / น้ำมันรถส่วนตัว / รถยนต์นั่ง ≤ 10 ที่นั่ง / ค่ารับรองลูกค้า (ไม่นำไปขอคืน ภ.พ.30)
+                        {detectNonDeductibleVatRisk(`${form.description} ${form.supplierName}`).likelyNonDeductible && (
+                          <span className="text-amber-800 font-semibold ms-1">(แนะนำสำหรับรายการนี้)</span>
+                        )}
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <div className="col-12">
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-wrap justify-between gap-2 text-xs font-mono-num">
-                    <span>VAT: ฿{formatTHB(computedVat)}</span>
+                    <span>
+                      ฐานค่าใช้จ่ายลงบัญชี: ฿{formatTHB(effectiveExpenseAmount)}
+                    </span>
+                    <span>VAT ซื้อ: ฿{formatTHB(computedVat)}</span>
                     <span>WHT: -฿{formatTHB(computedWht)}</span>
                     <span className="font-bold text-rose-700 text-sm">
                       ยอดเงินสดเบิกคืนสุทธิ: ฿{formatTHB(computedNetPaid)}
@@ -2306,100 +2355,21 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
         />
       )}
 
-      {/* Import Public Urgent Request Modal */}
+      {/* Import Public Urgent Request Modal (Cost Center, Overhead Setup, Category, VAT Compliance) */}
       {importingRequest && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md shadow-xl animate-figma-modal overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 m-0">
-                นำเข้าคำขอเบิกด่วน {importingRequest.voucherNo}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setImportingRequest(null)}
-                className="btn btn-sm btn-light"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form onSubmit={handleConfirmImportUrgent} className="p-5 space-y-3 text-sm">
-              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1 text-xs">
-                <div>
-                  <strong>ผู้ส่ง:</strong> {importingRequest.payerName} (฿{formatTHB(importingRequest.netPaid)})
-                </div>
-                <div>
-                  <strong>วันที่จ่าย:</strong> {formatShortDate(importingRequest.paymentDate)}
-                </div>
-                <div>
-                  <strong>ชื่องานที่แจ้ง:</strong> {importingRequest.projectName}
-                </div>
-                {importingRequest.vendorName && (
-                  <div>
-                    <strong>ร้านค้า / ปลายทาง:</strong> {importingRequest.vendorName}
-                    {importingRequest.vendorTaxId ? ` (${importingRequest.vendorTaxId})` : ''}
-                  </div>
-                )}
-                <div>
-                  <strong>รายละเอียด:</strong> {importingRequest.description}
-                </div>
-                <div className="text-slate-600 font-mono-num">
-                  ฐาน ฿{formatTHB(importingRequest.amount)} · VAT {importingRequest.vatRate}% (฿
-                  {formatTHB(importingRequest.vatAmount)}) · WHT {importingRequest.whtRate}% (-฿
-                  {formatTHB(importingRequest.whtAmount)})
-                </div>
-                {importingRequest.reviewNotes && (
-                  <div className="text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1 mt-1">
-                    <strong>หมายเหตุการปรับแก้:</strong> {importingRequest.reviewNotes}
-                  </div>
-                )}
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = importingRequest;
-                    setImportingRequest(null);
-                    setEditingUrgentRequest(target);
-                  }}
-                  className="btn btn-sm btn-outline-primary w-full inline-flex items-center justify-center gap-1.5 text-xs"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  พบข้อมูลพิมพ์ผิด? แก้ไขรายละเอียดและยอดเงินก่อนนำเข้า
-                </button>
-              </div>
-              <div>
-                <label className="form-label">เลือกโปรเจกต์ที่จะผูกยอดค่าใช้จ่ายเข้าบัญชี *</label>
-                <select
-                  className="form-select"
-                  value={importProjectId}
-                  onChange={(e) => setImportProjectId(e.target.value)}
-                >
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.eventName} ({p.customerName || '-'})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setImportingRequest(null)}
-                  className="btn btn-light border"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={importingBusy}
-                  className="btn btn-success px-4 fw-semibold"
-                >
-                  {importingBusy ? 'กำลังนำเข้า...' : 'ยืนยันนำเข้า & อนุมัติ'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <UrgentRequestImportModal
+          request={importingRequest}
+          company={company}
+          customers={customers}
+          projects={projects}
+          categories={categories}
+          teamUids={teamUids}
+          onClose={() => setImportingRequest(null)}
+          onSwitchToEdit={(target) => {
+            setImportingRequest(null);
+            setEditingUrgentRequest(target);
+          }}
+        />
       )}
 
       {/* Edit External Urgent Request Modal */}

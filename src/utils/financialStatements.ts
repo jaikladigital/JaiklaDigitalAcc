@@ -614,10 +614,26 @@ export function buildLiveLedgerFromApp(
 
   yearExpenses.forEach((e) => {
     const cat = (e.categoryName || '').toLowerCase();
+    const evt = (e.eventName || '').toLowerCase();
     const desc = (e.description || '').toLowerCase();
-    if (/โฆษณา|ads|media|การตลาด|ขาย|kol|influencer/.test(cat + ' ' + desc)) {
+    const combined = `${cat} ${evt} ${desc}`;
+
+    if (
+      evt.includes('ค่าใช้จ่ายในการขาย') ||
+      evt.includes('พบลูกค้า') ||
+      evt.includes('selling') ||
+      /โฆษณา|ads|media|การตลาด|ขาย|kol|influencer|ค่ารับรอง|รับรองลูกค้า|พบลูกค้า|selling|ค่าเดินทางและพาหนะ/.test(
+        combined
+      )
+    ) {
       sellingExpenses += e.amount;
-    } else if (/สำนักงาน|บัญชี|สอบบัญชี|เอกสาร|ค่าเช่า|บริการ/.test(cat + ' ' + desc)) {
+    } else if (
+      evt.includes('กิจกรรมสำนักงาน') ||
+      evt.includes('บริหารทั่วไป') ||
+      evt.includes('admin') ||
+      evt.includes('overhead') ||
+      /สำนักงาน|บัญชี|สอบบัญชี|เอกสาร|ค่าเช่า|บริการ|บริหาร|admin|overhead/.test(combined)
+    ) {
       adminExpenses += e.amount;
     } else {
       costOfServices += e.amount;
