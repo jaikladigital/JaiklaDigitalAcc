@@ -88,7 +88,9 @@ service cloud.firestore {
           'companyNameTh', 'companyNameEn', 'taxId', 'branch', 'address', 'phone', 'email',
           'bankName', 'bankBranch', 'bankAccountNo', 'bankAccountName',
           'defaultVatRate', 'defaultWhtRate',
-          'logoUrl', 'watermarkUrl', 'stampUrl', 'signatureUrl', 'lineOaId', 'updatedBy', 'updatedAt'
+          'logoUrl', 'watermarkUrl', 'stampUrl', 'signatureUrl', 'lineOaId',
+          'directorName', 'registeredCapital', 'dbdStatus', 'dbdObjective', 'lastDbdSyncAt', 'lastChangeSummary',
+          'updatedBy', 'updatedAt'
         ])
         && data.companyNameTh is string && data.companyNameTh.size() >= 1 && data.companyNameTh.size() <= 200
         && data.companyNameEn is string && data.companyNameEn.size() >= 1 && data.companyNameEn.size() <= 200
@@ -108,6 +110,12 @@ service cloud.firestore {
         && isOptionalString(data, 'stampUrl', 1000)
         && isOptionalString(data, 'signatureUrl', 1000)
         && isOptionalString(data, 'lineOaId', 60)
+        && isOptionalString(data, 'directorName', 150)
+        && isOptionalNumber(data, 'registeredCapital')
+        && isOptionalString(data, 'dbdStatus', 120)
+        && isOptionalString(data, 'dbdObjective', 300)
+        && isOptionalString(data, 'lastDbdSyncAt', 60)
+        && isOptionalString(data, 'lastChangeSummary', 500)
         && data.updatedBy is string && data.updatedBy.size() <= 128
         && data.updatedAt is timestamp;
     }

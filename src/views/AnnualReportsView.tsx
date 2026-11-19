@@ -37,7 +37,9 @@ import {
   computeStatementMetrics,
   exportAnnualDbdPackageExcel,
   HISTORICAL_YEARS_BE,
+  LATEST_OFFICE_ADDRESS_2569_PLUS,
   LedgerDraft,
+  resolveOfficeAddressForYear,
 } from '../utils/financialStatements';
 import { formatThaiLineBreaks } from '../utils/thaiText';
 import { toastError, toastSuccess } from '../utils/swal';
@@ -154,6 +156,68 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
     if (base) {
       setDraftOverride((p) => ({ ...p, [selectedYearBe]: base }));
       toastSuccess(`โหลดตัวเลขงบฐานะการเงินปี ${selectedYearBe} จากชุดข้อมูลบริษัทเรียบร้อย`);
+    }
+  };
+
+  const latestExpectedAddress = useMemo(
+    () => resolveOfficeAddressForYear(selectedYearBe, company),
+    [selectedYearBe, company]
+  );
+
+  const isAddressOutdatedFor2569Plus =
+    selectedYearBe >= 2569 &&
+    (currentLedger.businessAddress || '').trim() !== latestExpectedAddress.trim();
+
+  const handleApplyLatestCompanyToYear = async (saveImmediately = true) => {
+    const cleanTaxId = (company.taxId || '0105562067888').replace(/\D/g, '') || '0105562067888';
+    const nextAddress =
+      selectedYearBe >= 2569
+        ? latestExpectedAddress
+        : company.address && company.address !== 'กรุงเทพมหานคร ประเทศไทย'
+          ? company.address
+          : LATEST_OFFICE_ADDRESS_2569_PLUS;
+    const nextDirector = (company.directorName || '').trim() || currentLedger.directorName;
+
+    const updatedLedger: LedgerDraft = {
+      ...currentLedger,
+      businessAddress: nextAddress,
+      registrationNumber: cleanTaxId,
+      directorName: nextDirector,
+    };
+    setDraftOverride((p) => ({ ...p, [selectedYearBe]: updatedLedger }));
+
+    if (!saveImmediately) {
+      toastSuccess(`อัปเดตที่ตั้งสำนักงานล่าสุดลงร่างงบปี ${selectedYearBe} แล้ว`);
+      return;
+    }
+
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      toastSuccess(`อัปเดตที่ตั้งสำนักงานล่าสุดลงร่างงบปี ${selectedYearBe} แล้ว`);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const ledgerId = `year_${selectedYearBe}`;
+      const existing = annualLedgers.find((l) => l.id === ledgerId);
+      const activeTeam = Array.from(new Set([uid, ...teamUids])).slice(0, 30);
+
+      await setDoc(doc(db, 'annual_ledgers', ledgerId), {
+        ...updatedLedger,
+        createdBy: existing?.createdBy || uid,
+        teamUids: activeTeam,
+        createdAt: existing?.createdAt || serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      toastSuccess(
+        `อัปเดตที่ตั้งสำนักงานล่าสุดเข้าสู่งบปี ${selectedYearBe} เรียบร้อย`,
+        nextAddress
+      );
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `annual_ledgers/year_${selectedYearBe}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -397,6 +461,28 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
           {currentLedger.dataSourceMode === 'audited' ? 'โหมด: งบตรวจสอบแล้ว' : 'โหมด: ร่างจากข้อมูลสด'}
         </div>
       </div>
+
+      {isAddressOutdatedFor2569Plus && (
+        <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-amber-950">
+          <div className="space-y-0.5">
+            <div className="font-bold">
+              พบที่ตั้งสำนักงานล่าสุดสำหรับงบปี {selectedYearBe} (หลังย้ายที่ตั้งสำนักงาน)
+            </div>
+            <div className="text-xs text-amber-900">
+              ที่อยู่ในงบปีนี้ยังเป็น "{currentLedger.businessAddress}" → แนะนำเปลี่ยนเป็น "{latestExpectedAddress}"
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => handleApplyLatestCompanyToYear(true)}
+            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-amber-700 hover:bg-amber-800 rounded-lg whitespace-nowrap"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            อัพเดตที่อยู่ล่าสุดเข้าปี {selectedYearBe}
+          </button>
+        </div>
+      )}
 
       {/* 4 KPI Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1115,12 +1201,44 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 rounded-xl border border-slate-200 space-y-2">
-              <div className="font-bold text-slate-900">1. ข้อมูลทั่วไปของนิติบุคคล</div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-bold text-slate-900">1. ข้อมูลทั่วไปของนิติบุคคล</div>
+                {selectedYearBe >= 2569 ? (
+                  currentLedger.businessAddress === latestExpectedAddress ? (
+                    <span className="text-[11px] font-semibold text-emerald-700">
+                      ✓ ใช้ที่ตั้งสำนักงานล่าสุดแล้ว
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => handleApplyLatestCompanyToYear(true)}
+                      className="btn btn-sm btn-outline-primary text-[11px] py-0.5 px-2"
+                    >
+                      ปรับใช้ที่ตั้งล่าสุด (ปทุมธานี 12120)
+                    </button>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => handleApplyLatestCompanyToYear(false)}
+                    className="btn btn-link btn-sm text-[11px] p-0 text-decoration-none text-slate-500 hover:text-blue-700"
+                  >
+                    เปลี่ยนเป็นที่อยู่ปัจจุบัน
+                  </button>
+                )}
+              </div>
               <div className="text-xs text-slate-700 space-y-1">
                 <div><strong>ชื่อบริษัท:</strong> {company.companyNameTh}</div>
                 <div><strong>ทะเบียนนิติบุคคล:</strong> {currentLedger.registrationNumber} (จดทะเบียน {currentLedger.registrationDateTh})</div>
                 <div><strong>ที่ตั้งสำนักงาน:</strong> {currentLedger.businessAddress}</div>
                 <div><strong>กรรมการผู้มีอำนาจลงนาม:</strong> {currentLedger.directorName}</div>
+                {selectedYearBe <= 2568 && (
+                  <div className="text-[11px] text-slate-500 pt-1">
+                    * ปี 2562–2568 แสดงที่ตั้งตามงบที่ปิดและยื่น DBD ไปแล้ว (สำหรับปี 2569+ ระบบใช้ที่อยู่ล่าสุด {LATEST_OFFICE_ADDRESS_2569_PLUS} อัตโนมัติ)
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1328,11 +1446,33 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
 
           {/* Governance / CPA / AGM Metadata */}
           <div className="figma-card p-5">
-            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <ClipboardCheck className="w-4 h-4 text-slate-700" />
-              ข้อมูลนิติบุคคล ผู้สอบบัญชีรับอนุญาต (CPA) และการประชุมผู้ถือหุ้น (AGM)
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h3 className="text-sm font-bold text-slate-900 m-0 flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-slate-700" />
+                ข้อมูลนิติบุคคล ผู้สอบบัญชีรับอนุญาต (CPA) และการประชุมผู้ถือหุ้น (AGM)
+              </h3>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => handleApplyLatestCompanyToYear(false)}
+                className="btn btn-sm btn-outline-secondary text-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5 inline me-1" />
+                ดึงที่ตั้งและข้อมูลบริษัทล่าสุดมาใส่ปี {selectedYearBe}
+              </button>
+            </div>
             <div className="row g-3 text-xs">
+              <div className="col-12">
+                <label className="form-label">
+                  ที่ตั้งสำนักงาน (แสดงในหมายเหตุประกอบงบ ข้อ 1 ของปี พ.ศ. {selectedYearBe})
+                </label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  value={currentLedger.businessAddress}
+                  onChange={(e) => updateField('businessAddress', e.target.value)}
+                />
+              </div>
               <div className="col-md-4">
                 <label className="form-label">สำนักงานสอบบัญชี</label>
                 <input

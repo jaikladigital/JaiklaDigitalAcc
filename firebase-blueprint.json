@@ -49,6 +49,12 @@
         "stampUrl": { "type": "string", "maxLength": 1000 },
         "signatureUrl": { "type": "string", "maxLength": 1000 },
         "lineOaId": { "type": "string", "maxLength": 60 },
+        "directorName": { "type": "string", "maxLength": 150 },
+        "registeredCapital": { "type": "number" },
+        "dbdStatus": { "type": "string", "maxLength": 120 },
+        "dbdObjective": { "type": "string", "maxLength": 300 },
+        "lastDbdSyncAt": { "type": "string", "maxLength": 60 },
+        "lastChangeSummary": { "type": "string", "maxLength": 500 },
         "updatedBy": { "type": "string", "maxLength": 128 },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

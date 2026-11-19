@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import {
-  AlertTriangle,
   ArrowLeft,
   Camera,
   CheckCircle2,
@@ -36,7 +35,7 @@ import {
 import { FIELD_LABELS_TH, scanReceiptFile } from '../utils/receiptOcrClient';
 import { toastError, toastSuccess } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
-import { JaiklaLogoSVG } from './BrandAssets';
+import { FriendlyExpenseIconSVG, JaiklaLogoSVG } from './BrandAssets';
 
 interface PublicUrgentExpenseViewProps {
   company: CompanyProfile;
@@ -488,8 +487,8 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
               <div className="text-sm font-bold text-slate-900 truncate">
                 {company.companyNameTh}
               </div>
-              <div className="text-xs text-slate-500">
-                แจ้งเบิกค่าใช้จ่ายฉุกเฉินด่วน · ไม่ต้องเข้าสู่ระบบ
+              <div className="text-xs text-teal-700 font-medium">
+                แจ้งเบิกค่าใช้จ่ายโครงการ · ไม่ต้องเข้าสู่ระบบ
               </div>
             </div>
           </div>
@@ -507,16 +506,16 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
         {/* Form Card */}
         <form onSubmit={handleSubmit} className="figma-card p-5 sm:p-7 space-y-6">
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700">
-              <AlertTriangle className="w-4 h-4" />
-              แบบฟอร์มแจ้งค่าใช้จ่ายเร่งด่วนหน้างาน · แจ้งเตือน LINE OA {oaId}
+            <div className="inline-flex items-center justify-center gap-2 text-xs font-bold text-teal-800">
+              <FriendlyExpenseIconSVG className="w-5 h-5" />
+              <span>ส่งบิลค่าใช้จ่ายโครงการหน้างาน · แจ้งเตือนทีมบัญชี LINE OA {oaId}</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 m-0 thai-heading">
-              {formatThaiLineBreaks('แจ้งบันทึกค่าใช้จ่ายฉุกเฉิน (ไม่ต้องเข้าสู่ระบบ)')}
+              {formatThaiLineBreaks('แจ้งเบิกค่าใช้จ่ายโครงการ (ไม่ต้องเข้าสู่ระบบ)')}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 m-0">
               กรอกเบอร์โทรศัพท์ติดต่อกลับและแนบรูปบิล ระบบจะแจ้งเตือนไปยัง{' '}
-              <strong className="font-mono-num text-emerald-700">{oaId}</strong> และส่งเข้ารอตรวจสอบทันที
+              <strong className="font-mono-num text-teal-700">{oaId}</strong> และส่งเข้ารอตรวจสอบทันที
             </p>
           </div>
 

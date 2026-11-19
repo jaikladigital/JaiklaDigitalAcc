@@ -31,6 +31,12 @@ export interface CompanyProfile {
   stampUrl?: string;
   signatureUrl?: string;
   lineOaId?: string;
+  directorName?: string;
+  registeredCapital?: number;
+  dbdStatus?: string;
+  dbdObjective?: string;
+  lastDbdSyncAt?: string;
+  lastChangeSummary?: string;
   updatedBy?: string;
   updatedAt?: Timestamp;
 }
@@ -56,10 +62,27 @@ export const DEFAULT_COMPANY_PROFILE: CompanyProfile = {
   stampUrl: '',
   signatureUrl: '',
   lineOaId: '@421khbew',
+  directorName: 'นายสาธิต จันทร์ทนต์',
+  registeredCapital: 1000000,
+  dbdStatus: 'ยังดำเนินกิจการอยู่',
+  dbdObjective: 'กิจกรรมของบริษัทโฆษณา',
 };
 
 export const COMPANY_BILLING_HEADER_TEXT =
   'บริษัท ใจกล้า ดิจิตอล จำกัด เลขประจำตัวผู้เสียภาษี : 0105562067888 สถานที่ตั้ง 70/574 ซ.คลองหลวง24 หมู่บ้านกฤษดานคร19 หมู่3 ต.คลองหนึ่ง อ.คลองหลวง จ.ปทุมธานี 12120 โทรศัพท์ 083-899-9698';
+
+export function buildCompanyBillingHeaderText(company: CompanyProfile): string {
+  const cleanTaxId = (company.taxId || '0105562067888').replace(/\D/g, '') || company.taxId;
+  const addr =
+    company.address && company.address !== 'กรุงเทพมหานคร ประเทศไทย'
+      ? company.address
+      : DEFAULT_COMPANY_PROFILE.address;
+  const phone =
+    company.phone && company.phone !== '02-000-0000'
+      ? company.phone
+      : DEFAULT_COMPANY_PROFILE.phone;
+  return `${company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh} เลขประจำตัวผู้เสียภาษี : ${cleanTaxId} สถานที่ตั้ง ${addr} โทรศัพท์ ${phone}`;
+}
 
 export interface ServiceCategory {
   id: string;

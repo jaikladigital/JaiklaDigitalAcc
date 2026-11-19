@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import {
   AlertTriangle,
+  ArrowRight,
   Building2,
   Copy,
   FileText,
@@ -46,7 +47,7 @@ import {
 import {
   AccountingDocument,
   AnnualFinancialLedger,
-  COMPANY_BILLING_HEADER_TEXT,
+  buildCompanyBillingHeaderText,
   CompanyProfile,
   Customer,
   DEFAULT_COMPANY_LOGO,
@@ -59,7 +60,7 @@ import {
   UserProfile,
 } from './types/accounting';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { JaiklaLogoSVG } from './components/BrandAssets';
+import { FriendlyExpenseIconSVG, JaiklaLogoSVG } from './components/BrandAssets';
 import { PublicUrgentExpenseView } from './components/PublicUrgentExpenseView';
 import { DashboardView } from './views/DashboardView';
 import { DocumentsView } from './views/DocumentsView';
@@ -540,36 +541,48 @@ function MainApp() {
               {signingIn ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google Account'}
             </button>
 
-            <div className="pt-1">
+            <div className="pt-1 space-y-1.5">
               <button
                 type="button"
                 onClick={() => setPublicUrgentOpen(true)}
-                className="figma-btn w-full py-3 px-4 bg-rose-50 text-rose-800 border border-rose-200 font-semibold rounded-xl hover:bg-rose-100 inline-flex items-center justify-center gap-2 text-sm"
+                className="figma-btn friendly-expense-btn w-full py-3 px-4 bg-teal-50 hover:bg-teal-100/80 text-teal-900 border border-teal-200 hover:border-teal-300 font-semibold rounded-xl inline-flex items-center justify-center gap-2.5 text-sm shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
               >
-                <AlertTriangle className="w-4 h-4 text-rose-700 shrink-0" />
-                แจ้งค่าใช้จ่ายฉุกเฉินด่วน (ไม่ต้องเข้าสู่ระบบ)
+                <FriendlyExpenseIconSVG className="w-6 h-6" />
+                <span className="whitespace-nowrap">แจ้งเบิกค่าใช้จ่ายโครงการ</span>
+                <ArrowRight className="w-4 h-4 text-teal-700 friendly-arrow shrink-0" />
               </button>
+              <div className="text-[11px] text-slate-500">
+                ส่งบิลหน้างานได้ทันที ไม่ต้องเข้าสู่ระบบ
+              </div>
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-600 text-center space-y-2 leading-relaxed">
             <div className="select-all">
               <div className="font-semibold text-slate-800">
-                บริษัท ใจกล้า ดิจิตอล จำกัด
+                {company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh}
               </div>
               <div className="font-mono-num">
-                เลขประจำตัวผู้เสียภาษี : 0105562067888
+                เลขประจำตัวผู้เสียภาษี : {(company.taxId || DEFAULT_COMPANY_PROFILE.taxId).replace(/\D/g, '') || DEFAULT_COMPANY_PROFILE.taxId}
               </div>
               <div>
-                สถานที่ตั้ง 70/574 ซ.คลองหลวง24 หมู่บ้านกฤษดานคร19 หมู่3 ต.คลองหนึ่ง อ.คลองหลวง จ.ปทุมธานี 12120
+                สถานที่ตั้ง{' '}
+                {company.address && company.address !== 'กรุงเทพมหานคร ประเทศไทย'
+                  ? company.address
+                  : DEFAULT_COMPANY_PROFILE.address}
               </div>
-              <div className="font-mono-num">โทรศัพท์ 083-899-9698</div>
+              <div className="font-mono-num">
+                โทรศัพท์{' '}
+                {company.phone && company.phone !== '02-000-0000'
+                  ? company.phone
+                  : DEFAULT_COMPANY_PROFILE.phone}
+              </div>
             </div>
             <button
               type="button"
               onClick={async () => {
                 try {
-                  await navigator.clipboard.writeText(COMPANY_BILLING_HEADER_TEXT);
+                  await navigator.clipboard.writeText(buildCompanyBillingHeaderText(company));
                   toastSuccess('คัดลอกข้อมูลหัวบิลบริษัทเรียบร้อย', 'สามารถนำไปวางส่งต่อให้ร้านค้าเพื่อออกใบกำกับภาษีได้ทันที');
                 } catch {
                   toastError('ไม่สามารถคัดลอกข้อความได้');
@@ -819,6 +832,7 @@ function MainApp() {
               company={company}
               currentUserProfile={userProfile}
               teamMembers={teamMembers}
+              annualLedgers={annualLedgers}
             />
           )}
         </div>

@@ -160,6 +160,49 @@
   transform: scale(0.98);
 }
 
+/* Friendly, non-alarming micro-animations for project expense button */
+@keyframes friendlyReceiptFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-2.5px) rotate(-2deg);
+  }
+}
+
+@keyframes friendlyBadgePop {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+.animate-friendly-icon {
+  animation: friendlyReceiptFloat 3s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-friendly-badge {
+  animation: friendlyBadgePop 3s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.friendly-expense-btn:hover .animate-friendly-icon {
+  transform: translateY(-2px) scale(1.06);
+}
+
+.friendly-expense-btn .friendly-arrow {
+  transition: transform 180ms var(--ease-figma);
+}
+
+.friendly-expense-btn:hover .friendly-arrow {
+  transform: translateX(3px);
+}
+
 /* Responsive Touch Target & Thai Tone Mark Safe Padding on Mobile */
 @media (max-width: 767.98px) {
   .figma-btn,
@@ -289,6 +332,8 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-figma-in,
   .animate-figma-modal,
+  .animate-friendly-icon,
+  .animate-friendly-badge,
   .figma-card,
   .figma-btn {
     animation: none !important;

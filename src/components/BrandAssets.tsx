@@ -157,3 +157,48 @@ export const JaiklaSignatureSVG: React.FC<{ signatureUrl?: string }> = ({ signat
     </svg>
   );
 };
+
+export const FriendlyExpenseIconSVG: React.FC<{ className?: string }> = ({
+  className = 'w-6 h-6',
+}) => (
+  <svg
+    viewBox="0 0 32 32"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`${className} animate-friendly-icon shrink-0`}
+    aria-hidden="true"
+  >
+    {/* Soft rounded receipt paper */}
+    <path
+      d="M7 6.5C7 5.11929 8.11929 4 9.5 4H19.5C20.8807 4 22 5.11929 22 6.5V25.2C22 25.79 21.34 26.14 20.85 25.81L18.7 24.38C18.28 24.1 17.72 24.1 17.3 24.38L15.3 25.71C14.88 25.99 14.32 25.99 13.9 25.71L11.9 24.38C11.48 24.1 10.92 24.1 10.5 24.38L8.15 25.81C7.66 26.14 7 25.79 7 25.2V6.5Z"
+      fill="#FFFFFF"
+      stroke="#0F766E"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    {/* Gentle document lines */}
+    <path
+      d="M11 10.5H18M11 14.5H16"
+      stroke="#0D9488"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+    <path
+      d="M11 18.5H14.5"
+      stroke="#5EEAD4"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+    {/* Friendly animated mint-teal checkmark coin */}
+    <g className="animate-friendly-badge">
+      <circle cx="22.5" cy="21.5" r="6.5" fill="#0D9488" stroke="#FFFFFF" strokeWidth="1.6" />
+      <path
+        d="M19.8 21.6L21.6 23.3L25.2 19.7"
+        stroke="#FFFFFF"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </g>
+  </svg>
+);

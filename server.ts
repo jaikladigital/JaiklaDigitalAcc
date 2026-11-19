@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dispatchEmergencyLineNotification, EmergencyLinePayload } from './server/lineNotify.ts';
 import { extractReceiptFromImage, ReceiptExtractError } from './server/receiptExtract.ts';
+import { DbdLookupError, fetchCompanyFromDbd } from './server/dbdSync.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -87,6 +88,23 @@ async function startServer() {
     });
 
     res.json(result);
+  });
+
+  app.get('/api/dbd-lookup', async (req, res) => {
+    const taxId = String(req.query.taxId || '0105562067888');
+    try {
+      const data = await fetchCompanyFromDbd(taxId);
+      res.json({ ok: true, data });
+    } catch (err) {
+      if (err instanceof DbdLookupError) {
+        res.status(err.status).json({ ok: false, error: err.message });
+        return;
+      }
+      res.status(500).json({
+        ok: false,
+        error: err instanceof Error ? err.message : 'ไม่สามารถดึงข้อมูลจาก DBD ได้',
+      });
+    }
   });
 
   if (process.env.NODE_ENV !== 'production') {

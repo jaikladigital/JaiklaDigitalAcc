@@ -11,6 +11,30 @@ export type LedgerDraft = Omit<
   'id' | 'createdBy' | 'teamUids' | 'createdAt' | 'updatedAt'
 >;
 
+export const HISTORICAL_OFFICE_ADDRESS_2562_2568 =
+  '2365/209 ถนนอ่อนนุช แขวงสวนหลวง เขตสวนหลวง กรุงเทพมหานคร';
+
+export const LATEST_OFFICE_ADDRESS_2569_PLUS =
+  '70/574 ซ.คลองหลวง24 หมู่บ้านกฤษดานคร19 หมู่3 ต.คลองหนึ่ง อ.คลองหลวง จ.ปทุมธานี 12120';
+
+export function resolveOfficeAddressForYear(
+  fiscalYearBe: number,
+  company: CompanyProfile
+): string {
+  if (fiscalYearBe >= 2569) {
+    const addr = (company.address || '').trim();
+    if (
+      addr &&
+      addr !== 'กรุงเทพมหานคร ประเทศไทย' &&
+      addr !== HISTORICAL_OFFICE_ADDRESS_2562_2568
+    ) {
+      return addr;
+    }
+    return LATEST_OFFICE_ADDRESS_2569_PLUS;
+  }
+  return HISTORICAL_OFFICE_ADDRESS_2562_2568;
+}
+
 const BASE_CORP_META = {
   dataSourceMode: 'audited' as const,
   registeredCapitalShares: 10000,
@@ -19,7 +43,7 @@ const BASE_CORP_META = {
   incomeTaxExpense: 0,
   registrationNumber: '0105562067888',
   registrationDateTh: '10 เมษายน 2562',
-  businessAddress: '2365/209 ถนนอ่อนนุช แขวงสวนหลวง เขตสวนหลวง กรุงเทพมหานคร',
+  businessAddress: HISTORICAL_OFFICE_ADDRESS_2562_2568,
   directorName: 'นายสาธิต จันทร์ทนต์',
   cpaFirmName: 'บริษัท สปิค ออดิทแอนด์แท็กซ์ จำกัด',
   cpaAuditorName: 'สุภานดา โพธิพิทักษ์',
@@ -664,11 +688,8 @@ export function buildLiveLedgerFromApp(
     incomeTaxExpense: 0,
     registrationNumber: (company.taxId || '0105562067888').replace(/\D/g, ''),
     registrationDateTh: '10 เมษายน 2562',
-    businessAddress:
-      company.address && company.address !== 'กรุงเทพมหานคร ประเทศไทย'
-        ? company.address
-        : '2365/209 ถนนอ่อนนุช แขวงสวนหลวง เขตสวนหลวง กรุงเทพมหานคร',
-    directorName: 'นายสาธิต จันทร์ทนต์',
+    businessAddress: resolveOfficeAddressForYear(fiscalYearCe + 543, company),
+    directorName: (company.directorName || '').trim() || 'นายสาธิต จันทร์ทนต์',
     cpaFirmName: prevYearLedger?.cpaFirmName || 'บริษัท สปิค ออดิทแอนด์แท็กซ์ จำกัด',
     cpaAuditorName: prevYearLedger?.cpaAuditorName || 'สุภานดา โพธิพิทักษ์',
     cpaLicenseNo: prevYearLedger?.cpaLicenseNo || '10355',
