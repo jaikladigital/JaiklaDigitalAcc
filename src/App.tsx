@@ -61,6 +61,7 @@ import {
 } from './types/accounting';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FriendlyExpenseIconSVG, JaiklaLogoSVG } from './components/BrandAssets';
+import { PortalQrCard } from './components/PortalQrCard';
 import { PublicUrgentExpenseView } from './components/PublicUrgentExpenseView';
 import { DashboardView } from './views/DashboardView';
 import { DocumentsView } from './views/DocumentsView';
@@ -72,7 +73,6 @@ import { StorageView } from './views/StorageView';
 import { SettingsView } from './views/SettingsView';
 import { AnnualReportsView } from './views/AnnualReportsView';
 import { toastError, toastSuccess } from './utils/swal';
-import { formatThaiLineBreaks } from './utils/thaiText';
 
 type ActiveTab =
   | 'dashboard'
@@ -511,67 +511,83 @@ function MainApp() {
       );
     }
 
+    const resolvedAddress =
+      company.address && company.address !== 'กรุงเทพมหานคร ประเทศไทย'
+        ? company.address
+        : DEFAULT_COMPANY_PROFILE.address;
+    const subdistrictSplitIdx = resolvedAddress.search(/\s+(?=ต\.|แขวง)/);
+    const addrLine1 =
+      subdistrictSplitIdx > 0 ? resolvedAddress.slice(0, subdistrictSplitIdx).trim() : resolvedAddress;
+    const addrLine2 =
+      subdistrictSplitIdx > 0 ? resolvedAddress.slice(subdistrictSplitIdx).trim() : '';
+
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full figma-card p-6 sm:p-8 animate-figma-in text-center">
-          <div className="flex flex-col items-center gap-2.5 mb-5">
-            <JaiklaLogoSVG className="w-20 h-20 shrink-0" logoUrl={company.logoUrl} />
-            <div className="min-w-0">
-              <h1 className="text-lg font-bold text-slate-900 m-0 leading-[1.48] thai-heading thai-title-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-3 sm:p-4">
+        <div className="max-w-[540px] w-full figma-card p-4 sm:p-5 animate-figma-in text-center">
+          {/* Single-Line Brand & System Title */}
+          <div className="flex items-center justify-center gap-3 mb-4 text-left">
+            <JaiklaLogoSVG className="w-12 h-12 sm:w-14 sm:h-14 shrink-0" logoUrl={company.logoUrl} />
+            <div className="min-w-0 flex-1">
+              <h1 className="!text-[17px] sm:!text-[20px] font-bold text-slate-900 m-0 !leading-[1.38] whitespace-nowrap truncate">
                 {company.companyNameTh}
               </h1>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5 leading-[1.4]">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider leading-[1.35] truncate">
                 {company.companyNameEn}
+              </div>
+              <div className="text-xs sm:text-[13px] font-medium text-slate-700 mt-0.5 leading-[1.4]">
+                ระบบออกเอกสารบัญชีและงบประมาณบริษัท
               </div>
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-slate-900 mb-6 thai-heading thai-title-center leading-[1.48]">
-            {formatThaiLineBreaks('ระบบออกเอกสารบัญชีและงบประมาณบริษัท')}
-          </h2>
-
-          <div className="space-y-3">
+          {/* Primary & Friendly Actions with clear Thai vowel breathing room */}
+          <div className="flex flex-col gap-2.5">
             <button
               type="button"
               disabled={signingIn}
               onClick={handleGoogleSignIn}
-              className="figma-btn w-full py-3 px-4 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 inline-flex items-center justify-center gap-2.5"
+              className="figma-btn !rounded-xl w-full py-2.5 px-4 bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 inline-flex items-center justify-center gap-2 border-0"
             >
-              <LogIn className="w-4 h-4" />
-              {signingIn ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google Account'}
+              <LogIn className="w-4 h-4 shrink-0" />
+              <span>{signingIn ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google Account'}</span>
             </button>
 
-            <div className="pt-1 space-y-1.5">
+            <div className="flex flex-col items-center">
               <button
                 type="button"
                 onClick={() => setPublicUrgentOpen(true)}
-                className="figma-btn friendly-expense-btn w-full py-3 px-4 bg-teal-50 hover:bg-teal-100/80 text-teal-900 border border-teal-200 hover:border-teal-300 font-semibold rounded-xl inline-flex items-center justify-center gap-2.5 text-sm shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
+                className="figma-btn friendly-expense-btn !rounded-xl w-full py-2.5 px-4 bg-teal-50 hover:bg-teal-100/80 text-teal-900 border border-teal-200 hover:border-teal-300 font-semibold inline-flex items-center justify-center gap-2 text-sm shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
               >
-                <FriendlyExpenseIconSVG className="w-6 h-6" />
+                <FriendlyExpenseIconSVG className="w-5 h-5" />
                 <span className="whitespace-nowrap">แจ้งเบิกค่าใช้จ่ายโครงการ</span>
                 <ArrowRight className="w-4 h-4 text-teal-700 friendly-arrow shrink-0" />
               </button>
-              <div className="text-[11px] text-slate-500">
+              <div className="mt-2 text-[11px] text-slate-500 leading-[1.6]">
                 ส่งบิลหน้างานได้ทันที ไม่ต้องเข้าสู่ระบบ
               </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-600 text-center space-y-2 leading-relaxed">
-            <div className="select-all">
-              <div className="font-semibold text-slate-800">
-                {company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh}
+          {/* QR Code Quick Access for LINE Sharing */}
+          <PortalQrCard
+            companyNameTh={company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh}
+            companyNameEn={company.companyNameEn || DEFAULT_COMPANY_PROFILE.companyNameEn}
+          />
+
+          {/* Compact Billing Header Footer */}
+          <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-600 text-center space-y-1.5 leading-[1.45]">
+            <div className="select-all space-y-0.5">
+              <div className="font-semibold text-slate-800 leading-[1.4]">
+                {company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh} · เลขประจำตัวผู้เสียภาษี :{' '}
+                <span className="font-mono-num">
+                  {(company.taxId || DEFAULT_COMPANY_PROFILE.taxId).replace(/\D/g, '') || DEFAULT_COMPANY_PROFILE.taxId}
+                </span>
               </div>
-              <div className="font-mono-num">
-                เลขประจำตัวผู้เสียภาษี : {(company.taxId || DEFAULT_COMPANY_PROFILE.taxId).replace(/\D/g, '') || DEFAULT_COMPANY_PROFILE.taxId}
-              </div>
-              <div>
-                สถานที่ตั้ง{' '}
-                {company.address && company.address !== 'กรุงเทพมหานคร ประเทศไทย'
-                  ? company.address
-                  : DEFAULT_COMPANY_PROFILE.address}
-              </div>
-              <div className="font-mono-num">
+              <div className="leading-[1.45]">สถานที่ตั้ง {addrLine1}</div>
+              {addrLine2 && (
+                <div className="leading-[1.45] whitespace-nowrap">{addrLine2}</div>
+              )}
+              <div className="font-mono-num leading-[1.4]">
                 โทรศัพท์{' '}
                 {company.phone && company.phone !== '02-000-0000'
                   ? company.phone
@@ -588,9 +604,9 @@ function MainApp() {
                   toastError('ไม่สามารถคัดลอกข้อความได้');
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-slate-700"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 !rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-slate-700"
             >
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-3 h-3" />
               คัดลอกข้อมูลหัวบิลบริษัท
             </button>
           </div>

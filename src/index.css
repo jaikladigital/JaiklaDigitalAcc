@@ -29,7 +29,7 @@
   }
 
   html, body {
-    font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     background-color: var(--jkd-canvas);
     color: var(--jkd-navy);
     line-height: 1.65;
@@ -70,7 +70,7 @@
 
 /* Thai Phrase & Sentence Discipline Utilities */
 .thai-prose {
-  font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', sans-serif;
   line-height: 1.72;
   word-break: normal;
   overflow-wrap: break-word;
@@ -84,7 +84,7 @@
 }
 
 .thai-heading {
-  font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', sans-serif;
   line-height: 1.48;
   padding-top: 2px;
   padding-bottom: 2px;
@@ -151,9 +151,10 @@
 }
 
 .figma-btn {
+  border-radius: 0.75rem;
   transition: transform 140ms var(--ease-figma), background-color 140ms var(--ease-figma), box-shadow 140ms var(--ease-figma);
-  line-height: 1.45;
-  min-height: 38px;
+  line-height: 1.55;
+  min-height: 40px;
 }
 
 .figma-btn:active {
