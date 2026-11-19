@@ -1,0 +1,6 @@
+{
+  "name": "Jaikla Digital Accounting & Document Suite",
+  "description": "Enterprise document management (Quotation, Invoice/Billing/Delivery, Receipt), WHT 50 Tawi, Customer & Supplier analytics, Project Expense tracking, and Monthly Budget dashboard for Jaikla Digital Co., Ltd.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,538 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Hardened Primitives
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isEmailAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'jaikladigital@gmail.com';
+    }
+
+    function isAdmin() {
+      return isEmailAdmin() || (isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isTeamMember(data) {
+      return isVerifiedUser() && (
+        data.createdBy == request.auth.uid ||
+        (data.teamUids is list && request.auth.uid in data.teamUids)
+      );
+    }
+
+    function isValidTeamList(listVal) {
+      return listVal is list && listVal.size() >= 1 && listVal.size() <= 30 && listVal[0] is string && request.auth.uid in listVal;
+    }
+
+    function isOptionalString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isOptionalNumber(data, key) {
+      return !(key in data) || (data[key] is number);
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'role', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 150
+        && isOptionalString(data, 'photoURL', 500)
+        && data.role in ['admin', 'staff']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'email', 'createdAt'])
+        && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCompanyProfile(data) {
+      return data.keys().hasAll([
+          'companyNameTh', 'companyNameEn', 'taxId', 'address',
+          'bankAccountNo', 'defaultVatRate', 'defaultWhtRate', 'updatedBy', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'companyNameTh', 'companyNameEn', 'taxId', 'branch', 'address', 'phone', 'email',
+          'bankName', 'bankBranch', 'bankAccountNo', 'bankAccountName',
+          'defaultVatRate', 'defaultWhtRate',
+          'logoUrl', 'watermarkUrl', 'stampUrl', 'signatureUrl', 'lineOaId', 'updatedBy', 'updatedAt'
+        ])
+        && data.companyNameTh is string && data.companyNameTh.size() >= 1 && data.companyNameTh.size() <= 200
+        && data.companyNameEn is string && data.companyNameEn.size() >= 1 && data.companyNameEn.size() <= 200
+        && data.taxId is string && data.taxId.size() >= 10 && data.taxId.size() <= 30
+        && isOptionalString(data, 'branch', 100)
+        && data.address is string && data.address.size() >= 1 && data.address.size() <= 500
+        && isOptionalString(data, 'phone', 100)
+        && isOptionalString(data, 'email', 150)
+        && isOptionalString(data, 'bankName', 150)
+        && isOptionalString(data, 'bankBranch', 150)
+        && data.bankAccountNo is string && data.bankAccountNo.size() >= 1 && data.bankAccountNo.size() <= 50
+        && isOptionalString(data, 'bankAccountName', 200)
+        && data.defaultVatRate is number && data.defaultVatRate >= 0 && data.defaultVatRate <= 30
+        && data.defaultWhtRate is number && data.defaultWhtRate >= 0 && data.defaultWhtRate <= 30
+        && isOptionalString(data, 'logoUrl', 1000)
+        && isOptionalString(data, 'watermarkUrl', 1000)
+        && isOptionalString(data, 'stampUrl', 1000)
+        && isOptionalString(data, 'signatureUrl', 1000)
+        && isOptionalString(data, 'lineOaId', 60)
+        && data.updatedBy is string && data.updatedBy.size() <= 128
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidServiceCategory(data) {
+      return data.keys().hasAll(['name', 'defaultWhtRate', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['name', 'description', 'defaultWhtRate', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'])
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 150
+        && isOptionalString(data, 'description', 500)
+        && data.defaultWhtRate is number && data.defaultWhtRate >= 0 && data.defaultWhtRate <= 30
+        && isValidId(data.createdBy)
+        && isValidTeamList(data.teamUids)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['companyName', 'address', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['companyName', 'taxId', 'branch', 'address', 'contactName', 'phone', 'email', 'notes', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'])
+        && data.companyName is string && data.companyName.size() >= 1 && data.companyName.size() <= 250
+        && isOptionalString(data, 'taxId', 30)
+        && isOptionalString(data, 'branch', 100)
+        && data.address is string && data.address.size() >= 1 && data.address.size() <= 600
+        && isOptionalString(data, 'contactName', 150)
+        && isOptionalString(data, 'phone', 60)
+        && isOptionalString(data, 'email', 150)
+        && isOptionalString(data, 'notes', 1000)
+        && isValidId(data.createdBy)
+        && isValidTeamList(data.teamUids)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSupplier(data) {
+      return data.keys().hasAll(['name', 'entityType', 'categoryId', 'baseRate', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['name', 'taxId', 'entityType', 'address', 'contactName', 'phone', 'email', 'categoryId', 'categoryName', 'baseRate', 'unit', 'rating', 'notes', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'])
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 250
+        && isOptionalString(data, 'taxId', 30)
+        && data.entityType in ['corporate', 'individual']
+        && isOptionalString(data, 'address', 600)
+        && isOptionalString(data, 'contactName', 150)
+        && isOptionalString(data, 'phone', 60)
+        && isOptionalString(data, 'email', 150)
+        && isValidId(data.categoryId)
+        && isOptionalString(data, 'categoryName', 150)
+        && data.baseRate is number && data.baseRate >= 0
+        && isOptionalString(data, 'unit', 60)
+        && isOptionalNumber(data, 'rating')
+        && isOptionalString(data, 'notes', 1000)
+        && isValidId(data.createdBy)
+        && isValidTeamList(data.teamUids)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['eventName', 'customerId', 'status', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['eventName', 'durationStart', 'durationEnd', 'customerId', 'customerName', 'status', 'budgetLimit', 'notes', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'])
+        && data.eventName is string && data.eventName.size() >= 1 && data.eventName.size() <= 250
+        && isOptionalString(data, 'durationStart', 30)
+        && isOptionalString(data, 'durationEnd', 30)
+        && isValidId(data.customerId)
+        && isOptionalString(data, 'customerName', 250)
+        && data.status in ['active', 'completed', 'cancelled']
+        && isOptionalNumber(data, 'budgetLimit')
+        && isOptionalString(data, 'notes', 1000)
+        && isValidId(data.createdBy)
+        && isValidTeamList(data.teamUids)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAccountingDocument(data) {
+      return data.keys().hasAll([
+          'type', 'docNumber', 'docDate', 'copyType', 'eventName', 'customerId',
+          'customerSnapshot', 'items', 'subtotal', 'vatEnabled', 'vatRate', 'vatAmount',
+          'whtEnabled', 'whtRate', 'whtAmount', 'grandTotal', 'netPayable', 'status',
+          'createdBy', 'teamUids', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'type', 'docNumber', 'docDate', 'dueDate', 'copyType', 'refDocId', 'refDocNumber',
+          'installmentInfo', 'projectId', 'eventName', 'durationText', 'customerId',
+          'customerSnapshot', 'items', 'subtotal', 'vatEnabled', 'vatRate', 'vatAmount',
+          'whtEnabled', 'whtRate', 'whtAmount', 'grandTotal', 'netPayable', 'thaiBahtText',
+          'notesRed', 'termsText', 'paymentMethod', 'paymentBank', 'paymentChequeNo',
+          'paymentDate', 'watermarkConfig', 'showStamp', 'showSignature', 'status',
+          'issueMode', 'specialDeliveryDate', 'revisionNumber', 'specialCaseReason',
+          'showSpecialNoteOnPdf', 'lastEditedBy',
+          'createdBy', 'teamUids', 'createdAt', 'updatedAt'
+        ])
+        && data.type in ['QT', 'INV', 'REC']
+        && data.docNumber is string && data.docNumber.size() >= 1 && data.docNumber.size() <= 60
+        && data.docDate is string && data.docDate.size() >= 1 && data.docDate.size() <= 30
+        && isOptionalString(data, 'dueDate', 30)
+        && data.copyType in ['original', 'copy']
+        && isOptionalString(data, 'refDocId', 128)
+        && isOptionalString(data, 'refDocNumber', 60)
+        && (!('installmentInfo' in data) || data.installmentInfo is map)
+        && isOptionalString(data, 'projectId', 128)
+        && data.eventName is string && data.eventName.size() >= 1 && data.eventName.size() <= 250
+        && isOptionalString(data, 'durationText', 120)
+        && isValidId(data.customerId)
+        && data.customerSnapshot is map
+        && data.items is list && data.items.size() >= 1 && data.items.size() <= 50 && data.items[0] is map
+        && data.subtotal is number && data.subtotal >= 0
+        && data.vatEnabled is bool
+        && data.vatRate is number && data.vatRate >= 0 && data.vatRate <= 30
+        && data.vatAmount is number && data.vatAmount >= 0
+        && data.whtEnabled is bool
+        && data.whtRate is number && data.whtRate >= 0 && data.whtRate <= 30
+        && data.whtAmount is number && data.whtAmount >= 0
+        && data.grandTotal is number && data.grandTotal >= 0
+        && data.netPayable is number && data.netPayable >= 0
+        && isOptionalString(data, 'thaiBahtText', 400)
+        && isOptionalString(data, 'notesRed', 1500)
+        && isOptionalString(data, 'termsText', 2000)
+        && (!('paymentMethod' in data) || data.paymentMethod in ['transfer', 'cheque', 'cash', 'other'])
+        && isOptionalString(data, 'paymentBank', 150)
+        && isOptionalString(data, 'paymentChequeNo', 100)
+        && isOptionalString(data, 'paymentDate', 30)
+        && (!('watermarkConfig' in data) || data.watermarkConfig is map)
+        && (!('showStamp' in data) || data.showStamp is bool)
+        && (!('showSignature' in data) || data.showSignature is bool)
+        && data.status in ['draft', 'issued', 'approved', 'paid', 'cancelled']
+        && (!('issueMode' in data) || data.issueMode in ['normal', 'backdated', 'advance', 'special'])
+        && isOptionalString(data, 'specialDeliveryDate', 30)
+        && (!('revisionNumber' in data) || (data.revisionNumber is number && data.revisionNumber >= 0 && data.revisionNumber <= 99))
+        && isOptionalString(data, 'specialCaseReason', 500)
+        && (!('showSpecialNoteOnPdf' in data) || data.showSpecialNoteOnPdf is bool)
+        && isOptionalString(data, 'lastEditedBy', 150)
+        && isValidId(data.createdBy)
+        && isValidTeamList(data.teamUids)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll([
+          'projectId', 'eventName', 'supplierName', 'description', 'amount',
+          'vatRate', 'vatAmount', 'whtRate', 'whtAmount', 'netPaid',
+          'paymentDate', 'monthYear', 'createdBy', 'teamUids', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'projectId', 'eventName', 'supplierId', 'supplierName', 'supplierTaxId', 'supplierAddress',
+          'categoryId', 'categoryName', 'description', 'amount', 'vatRate', 'vatAmount',
+          'whtRate', 'whtAmount', 'netPaid', 'paymentDate', 'monthYear', 'receiptUrl', 'extraPhotoUrl',
+          'wht50TawiNo', 'wht50TawiIssued', 'incomeType50Tawi',
+          'isEmergencyCash', 'emergencyVoucherNo', 'payerType', 'payerName', 'payerPhone',
+          'urgencyReason', 'emergencyStatus', 'lineNotifiedAt', 'lineNotifyChannel',
+          'createdBy', 'teamUids', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.projectId)
+        && data.eventName is string && data.eventName.size() >= 1 && data.eventName.size() <= 250
+        && isOptionalString(data, 'supplierId', 128)
+        && data.supplierName is string && data.supplierName.size() >= 1 && data.supplierName.size() <= 250
+        && isOptionalString(data, 'supplierTaxId', 30)
+        && isOptionalString(data, 'supplierAddress', 600)
+        && isOptionalString(data, 'categoryId', 128)
+        && isOptionalString(data, 'categoryName', 150)
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 500
+        && data.amount is number && data.amount >= 0
+        && data.vatRate is number && data.vatRate >= 0 && data.vatRate <= 30
+        && data.vatAmount is number && data.vatAmount >= 0
+        && data.whtRate is number && data.whtRate >= 0 && data.whtRate <= 30
+        && data.whtAmount is number && data.whtAmount >= 0
+        && data.netPaid is number && data.netPaid >= 0
+        && data.paymentDate is string && data.paymentDate.size() >= 8 && data.paymentDate.size() <= 30
+        && data.monthYear is string && data.monthYear.matches('^\\d{4}-\\d{2}$')
+        && isOptionalString(data, 'receiptUrl', 60000)
+        && isOptionalString(data, 'extraPhotoUrl', 60000)
+        && isOptionalString(data, 'wht50TawiNo', 60)
+        && (!('wht50TawiIssued' in data) || data.wht50TawiIssued is bool)
+        && isOptionalString(data, 'incomeType50Tawi', 200)
+        && (!('isEmergencyCash' in data) || data.isEmergencyCash is bool)
+        && isOptionalString(data, 'emergencyVoucherNo', 60)
+        && (!('payerType' in data) || data.payerType in ['employee', 'supplier'])
+        && isOptionalString(data, 'payerName', 250)
+        && isOptionalString(data, 'payerPhone', 60)
+        && isOptionalString(data, 'urgencyReason', 500)
+        && (!('emergencyStatus' in data) || data.emergencyStatus in ['pending_reimburse', 'approved', 'reimbursed'])
+        && isOptionalString(data, 'lineNotifiedAt', 50)
+        && isOptionalString(data, 'lineNotifyChannel', 50)
+        && isValidId(data.createdBy)
+        && isValidTeamList(data.teamUids)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 4. Collection Rules
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isVerifiedUser() && (isEmailAdmin() || existing().uid == request.auth.uid);
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (incoming().role == 'staff' || (isEmailAdmin() && incoming().role == 'admin'));
+      allow update: if isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isOwner(userId)
+            && incoming().role == existing().role
+            && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isEmailAdmin();
+      allow create: if isValidId(userId)
+        && isValidAdminRecord(incoming())
+        && incoming().uid == userId
+        && incoming().createdAt == request.time
+        && (isAdmin() || (isOwner(userId) && isEmailAdmin()));
+      allow update: if false;
+      allow delete: if isValidId(userId) && isAdmin() && userId != request.auth.uid;
+    }
+
+    match /settings/{settingId} {
+      allow get: if isValidId(settingId) && isVerifiedUser();
+      allow list: if false;
+      allow create: if isValidId(settingId)
+        && isAdmin()
+        && isValidCompanyProfile(incoming())
+        && incoming().updatedBy == request.auth.uid
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(settingId)
+        && isAdmin()
+        && isValidCompanyProfile(incoming())
+        && incoming().updatedBy == request.auth.uid
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /service_categories/{categoryId} {
+      allow get: if isValidId(categoryId) && (isAdmin() || isTeamMember(existing()));
+      allow list: if isVerifiedUser() && (isEmailAdmin() || existing().createdBy == request.auth.uid || request.auth.uid in existing().teamUids);
+      allow create: if isValidId(categoryId)
+        && isVerifiedUser()
+        && isValidServiceCategory(incoming())
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(categoryId)
+        && isVerifiedUser()
+        && isValidServiceCategory(incoming())
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isTeamMember(existing())
+            && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'defaultWhtRate', 'teamUids', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(categoryId) && (isAdmin() || (isVerifiedUser() && existing().createdBy == request.auth.uid));
+    }
+
+    match /customers/{customerId} {
+      allow get: if isValidId(customerId) && (isAdmin() || isTeamMember(existing()));
+      allow list: if isVerifiedUser() && (isEmailAdmin() || existing().createdBy == request.auth.uid || request.auth.uid in existing().teamUids);
+      allow create: if isValidId(customerId)
+        && isVerifiedUser()
+        && isValidCustomer(incoming())
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(customerId)
+        && isVerifiedUser()
+        && isValidCustomer(incoming())
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isTeamMember(existing())
+            && incoming().diff(existing()).affectedKeys().hasOnly(['companyName', 'taxId', 'branch', 'address', 'contactName', 'phone', 'email', 'notes', 'teamUids', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(customerId) && (isAdmin() || (isVerifiedUser() && existing().createdBy == request.auth.uid));
+    }
+
+    match /suppliers/{supplierId} {
+      allow get: if isValidId(supplierId) && (isAdmin() || isTeamMember(existing()));
+      allow list: if isVerifiedUser() && (isEmailAdmin() || existing().createdBy == request.auth.uid || request.auth.uid in existing().teamUids);
+      allow create: if isValidId(supplierId)
+        && isVerifiedUser()
+        && isValidSupplier(incoming())
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/service_categories/$(incoming().categoryId));
+      allow update: if isValidId(supplierId)
+        && isVerifiedUser()
+        && isValidSupplier(incoming())
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isTeamMember(existing())
+            && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'taxId', 'entityType', 'address', 'contactName', 'phone', 'email', 'categoryId', 'categoryName', 'baseRate', 'unit', 'rating', 'notes', 'teamUids', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(supplierId) && (isAdmin() || (isVerifiedUser() && existing().createdBy == request.auth.uid));
+    }
+
+    match /projects/{projectId} {
+      allow get: if isValidId(projectId) && (isAdmin() || isTeamMember(existing()));
+      allow list: if isVerifiedUser() && (isEmailAdmin() || existing().createdBy == request.auth.uid || request.auth.uid in existing().teamUids);
+      allow create: if isValidId(projectId)
+        && isVerifiedUser()
+        && isValidProject(incoming())
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/customers/$(incoming().customerId));
+      allow update: if isValidId(projectId)
+        && isVerifiedUser()
+        && isValidProject(incoming())
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isTeamMember(existing())
+            && !(existing().status in ['completed', 'cancelled'])
+            && incoming().diff(existing()).affectedKeys().hasOnly(['eventName', 'durationStart', 'durationEnd', 'customerId', 'customerName', 'status', 'budgetLimit', 'notes', 'teamUids', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(projectId) && (isAdmin() || (isVerifiedUser() && existing().createdBy == request.auth.uid));
+    }
+
+    match /documents/{docId} {
+      allow get: if isValidId(docId) && (isAdmin() || isTeamMember(existing()));
+      allow list: if isVerifiedUser() && (isEmailAdmin() || existing().createdBy == request.auth.uid || request.auth.uid in existing().teamUids);
+      allow create: if isValidId(docId)
+        && isVerifiedUser()
+        && isValidAccountingDocument(incoming())
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/customers/$(incoming().customerId));
+      allow update: if isValidId(docId)
+        && isVerifiedUser()
+        && isValidAccountingDocument(incoming())
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isTeamMember(existing())
+            && !(existing().status in ['paid', 'cancelled'])
+            && (
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'paymentMethod', 'paymentBank', 'paymentChequeNo', 'paymentDate', 'updatedAt'])
+              || incoming().diff(existing()).affectedKeys().hasOnly([
+                'docNumber', 'docDate', 'dueDate', 'copyType', 'refDocId', 'refDocNumber', 'installmentInfo',
+                'projectId', 'eventName', 'durationText', 'customerId', 'customerSnapshot',
+                'items', 'subtotal', 'vatEnabled', 'vatRate', 'vatAmount', 'whtEnabled', 'whtRate',
+                'whtAmount', 'grandTotal', 'netPayable', 'thaiBahtText', 'notesRed', 'termsText',
+                'paymentMethod', 'paymentBank', 'paymentChequeNo', 'paymentDate',
+                'watermarkConfig', 'showStamp', 'showSignature', 'status',
+                'issueMode', 'specialDeliveryDate', 'revisionNumber', 'specialCaseReason',
+                'showSpecialNoteOnPdf', 'lastEditedBy', 'teamUids', 'updatedAt'
+              ])
+            )
+          )
+        );
+      allow delete: if isValidId(docId) && (isAdmin() || (isVerifiedUser() && existing().createdBy == request.auth.uid && existing().status == 'draft'));
+    }
+
+    match /expenses/{expenseId} {
+      allow get: if isValidId(expenseId) && (isAdmin() || isTeamMember(existing()));
+      allow list: if isVerifiedUser() && (isEmailAdmin() || existing().createdBy == request.auth.uid || request.auth.uid in existing().teamUids);
+      allow create: if isValidId(expenseId)
+        && isVerifiedUser()
+        && isValidExpense(incoming())
+        && incoming().createdBy == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/projects/$(incoming().projectId));
+      allow update: if isValidId(expenseId)
+        && isVerifiedUser()
+        && isValidExpense(incoming())
+        && incoming().createdBy == existing().createdBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isTeamMember(existing())
+            && (
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'lineNotifiedAt', 'lineNotifyChannel', 'wht50TawiNo', 'wht50TawiIssued', 'updatedAt'
+              ])
+              || (
+                (!('emergencyStatus' in existing()) || existing().emergencyStatus != 'reimbursed')
+                && incoming().diff(existing()).affectedKeys().hasOnly([
+                  'projectId', 'eventName', 'supplierId', 'supplierName', 'supplierTaxId', 'supplierAddress',
+                  'categoryId', 'categoryName', 'description', 'amount', 'vatRate', 'vatAmount',
+                  'whtRate', 'whtAmount', 'netPaid', 'paymentDate', 'monthYear', 'receiptUrl', 'extraPhotoUrl',
+                  'wht50TawiNo', 'wht50TawiIssued', 'incomeType50Tawi',
+                  'isEmergencyCash', 'emergencyVoucherNo', 'payerType', 'payerName', 'payerPhone',
+                  'urgencyReason', 'emergencyStatus', 'lineNotifiedAt', 'lineNotifyChannel',
+                  'teamUids', 'updatedAt'
+                ])
+              )
+            )
+          )
+        );
+      allow delete: if isValidId(expenseId) && (isAdmin() || (isVerifiedUser() && existing().createdBy == request.auth.uid));
+    }
+  }
+}

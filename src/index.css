@@ -1,0 +1,364 @@
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "tailwindcss";
+
+:root {
+  --jkd-navy: #0f172a;
+  --jkd-slate: #1e293b;
+  --jkd-accent: #1d4ed8;
+  --jkd-accent-hover: #1e40af;
+  --jkd-emerald: #059669;
+  --jkd-crimson: #dc2626;
+  --jkd-amber: #d97706;
+  --jkd-surface: #ffffff;
+  --jkd-canvas: #f8fafc;
+  --jkd-border: #e2e8f0;
+  --ease-figma: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Fluid Responsive Typography Scales (Browser Viewport Driven) */
+  --jkd-text-h1: clamp(1.125rem, 1.4vw + 0.72rem, 1.45rem);
+  --jkd-text-h2: clamp(0.95rem, 0.8vw + 0.72rem, 1.125rem);
+  --jkd-text-body: clamp(0.875rem, 0.25vw + 0.81rem, 0.95rem);
+  --jkd-text-sm: clamp(0.75rem, 0.2vw + 0.7rem, 0.825rem);
+  --jkd-text-xs: clamp(0.7rem, 0.15vw + 0.66rem, 0.76rem);
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html, body {
+    font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--jkd-canvas);
+    color: var(--jkd-navy);
+    line-height: 1.65;
+    word-break: normal;
+    overflow-wrap: break-word;
+    line-break: auto;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Thai Script Headroom: Prevent clipping of upper vowels & tone marks (ิ ี ึ ื ่ ้ ๊ ๋ ์) */
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.48;
+    text-wrap: balance;
+    padding-block: 0.04em;
+  }
+
+  h1 {
+    font-size: var(--jkd-text-h1);
+  }
+
+  h2 {
+    font-size: var(--jkd-text-h2);
+  }
+
+  p, li, td, th, label, span {
+    line-height: 1.62;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    text-decoration: none;
+  }
+}
+
+/* Thai Phrase & Sentence Discipline Utilities */
+.thai-prose {
+  font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Plus Jakarta Sans', sans-serif;
+  line-height: 1.72;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-break: auto;
+  text-wrap: pretty;
+}
+
+.thai-phrase {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.thai-heading {
+  font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Plus Jakarta Sans', sans-serif;
+  line-height: 1.48;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  text-wrap: balance;
+}
+
+.thai-title-center {
+  text-align: center;
+  margin-inline: auto;
+  text-wrap: balance;
+}
+
+.font-mono-num {
+  font-family: 'IBM Plex Mono', 'Noto Sans Thai', 'IBM Plex Sans Thai', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Figma-style Smooth Micro-interactions */
+@keyframes figmaFadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes figmaModalEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-figma-in {
+  animation: figmaFadeSlideUp 220ms var(--ease-figma) both;
+}
+
+.animate-figma-modal {
+  animation: figmaModalEnter 240ms var(--ease-figma) both;
+}
+
+.figma-card {
+  background: var(--jkd-surface);
+  border: 1px solid var(--jkd-border);
+  border-radius: 10px;
+  transition: transform 180ms var(--ease-figma), box-shadow 180ms var(--ease-figma), border-color 180ms var(--ease-figma);
+}
+
+.figma-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 24px -10px rgba(15, 23, 42, 0.08);
+}
+
+.figma-btn {
+  transition: transform 140ms var(--ease-figma), background-color 140ms var(--ease-figma), box-shadow 140ms var(--ease-figma);
+  line-height: 1.45;
+  min-height: 38px;
+}
+
+.figma-btn:active {
+  transform: scale(0.98);
+}
+
+/* Responsive Touch Target & Thai Tone Mark Safe Padding on Mobile */
+@media (max-width: 767.98px) {
+  .figma-btn,
+  .btn {
+    min-height: 42px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .form-control,
+  .form-select {
+    min-height: 42px;
+    font-size: 16px; /* Prevents iOS zoom on focus while keeping Thai vowels clear */
+  }
+
+  .table td,
+  .table th {
+    padding-top: 0.65rem !important;
+    padding-bottom: 0.65rem !important;
+    white-space: nowrap;
+  }
+
+  .table td.wrap-cell {
+    white-space: normal;
+    min-width: 180px;
+  }
+}
+
+/* Bootstrap 5 Form Polish with Thai Script Vertical Clearance */
+.form-control, .form-select {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  border-color: #cbd5e1;
+  border-radius: 8px;
+  padding: 0.52rem 0.78rem;
+  transition: border-color 150ms var(--ease-figma), box-shadow 150ms var(--ease-figma);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+
+/* A4 Document Paper Sheet (Multi-Page PDF Ready) */
+.a4-pages-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.a4-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 13mm 14mm;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 36px -8px rgba(15, 23, 42, 0.14);
+  font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Plus Jakarta Sans', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.58;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-break: auto;
+  box-sizing: border-box;
+}
+
+.a4-sheet-paginated {
+  height: 297mm;
+  min-height: 297mm;
+  max-height: 297mm;
+}
+
+.a4-sheet h1,
+.a4-sheet h2,
+.a4-sheet h3 {
+  line-height: 1.42;
+}
+
+.a4-watermark-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.a4-watermark-text {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Thai', 'IBM Plex Sans Thai', sans-serif;
+  font-weight: 800;
+  font-size: 52px;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  color: #0f172a;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+  text-align: center;
+}
+
+.a4-content-layer {
+  position: relative;
+  z-index: 10;
+}
+
+/* SweetAlert2 Corporate Styling */
+.swal2-popup.jkd-swal-popup {
+  border-radius: 14px !important;
+  font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Plus Jakarta Sans', sans-serif !important;
+  border: 1px solid #e2e8f0;
+  line-height: 1.6 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-figma-in,
+  .animate-figma-modal,
+  .figma-card,
+  .figma-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Print Layout for Exact A4 Export / PDF */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .responsive-a4-outer {
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .responsive-a4-scaler {
+    transform: none !important;
+    width: 210mm !important;
+    position: static !important;
+  }
+
+  .print-only-container {
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  .a4-pages-stack {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  .a4-sheet {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 13mm 14mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .a4-sheet-paginated {
+    height: 297mm !important;
+    max-height: 297mm !important;
+  }
+
+  .a4-sheet:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+}
