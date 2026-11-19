@@ -33,7 +33,9 @@ import {
   Truck,
   X,
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import {
+  app,
   auth,
   db,
   googleProvider,
@@ -395,11 +397,81 @@ function MainApp() {
     try {
       await signInWithPopup(auth, googleProvider);
       toastSuccess('เข้าสู่ระบบสำเร็จ', 'ยินดีต้อนรับเข้าสู่ระบบบัญชี บริษัท ใจกล้า ดิจิตอล จำกัด');
-    } catch (error) {
-      toastError(
-        'เข้าสู่ระบบไม่สำเร็จ',
-        error instanceof Error ? error.message : 'กรุณาลองใหม่อีกครั้ง'
-      );
+    } catch (error: unknown) {
+      const errObj = error as { code?: string; message?: string };
+      const errCode = errObj?.code || '';
+      const errMsg = error instanceof Error ? error.message : String(error || '');
+
+      if (errCode === 'auth/unauthorized-domain' || errMsg.includes('auth/unauthorized-domain')) {
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+        const projectId = app.options.projectId || 'gen-lang-client-0436034249';
+        const consoleUrl = `https://console.firebase.google.com/project/${encodeURIComponent(projectId)}/authentication/settings`;
+        const safeHost = currentHost
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        const safeProject = projectId
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+
+        await Swal.fire({
+          icon: 'warning',
+          title: 'โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase Auth',
+          width: 580,
+          customClass: { popup: 'jkd-swal-popup' },
+          showConfirmButton: true,
+          confirmButtonText: 'ปิดหน้าต่าง',
+          confirmButtonColor: '#0f172a',
+          html: `
+            <div class="text-left text-xs sm:text-sm text-slate-700 space-y-3" style="line-height: 1.65;">
+              <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-950">
+                ระบบไม่สามารถล็อกอิน Google ได้ เนื่องจากโดเมนปัจจุบันยังไม่ถูกเพิ่มในรายการ <strong>Authorized domains</strong> ของ Firebase
+              </div>
+              <div>
+                <div class="font-semibold text-slate-900 mb-1">โดเมนที่ต้องเพิ่ม (คัดลอกค่านี้):</div>
+                <div class="flex items-center gap-2">
+                  <code class="flex-1 p-2 rounded bg-slate-100 border border-slate-200 text-xs font-mono break-all text-slate-900">${safeHost}</code>
+                  <button type="button" id="jkd-copy-domain-btn" class="btn btn-sm btn-outline-primary whitespace-nowrap">คัดลอกโดเมน</button>
+                </div>
+              </div>
+              <ol class="pl-5 space-y-1 text-xs text-slate-600 mb-0">
+                <li>เปิดหน้า <strong>Firebase Console</strong> ของโปรเจกต์ <code class="font-mono">${safeProject}</code></li>
+                <li>ไปที่เมนู <strong>Authentication</strong> &gt; <strong>Settings</strong> &gt; <strong>Authorized domains</strong></li>
+                <li>กดปุ่ม <strong>Add domain</strong> แล้ววางโดเมนด้านบน จากนั้นกด <strong>Add</strong> แล้วลองเข้าสู่ระบบใหม่อีกครั้ง</li>
+              </ol>
+              <div class="pt-1">
+                <a href="${consoleUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100 text-white text-decoration-none">
+                  เปิดหน้าตั้งค่า Firebase Authentication (${safeProject})
+                </a>
+              </div>
+            </div>
+          `,
+          didOpen: () => {
+            const btn = document.getElementById('jkd-copy-domain-btn');
+            if (btn) {
+              btn.addEventListener('click', async () => {
+                try {
+                  await navigator.clipboard.writeText(currentHost);
+                  btn.textContent = 'คัดลอกแล้ว ✓';
+                } catch {
+                  btn.textContent = 'คัดลอกไม่สำเร็จ';
+                }
+              });
+            }
+          },
+        });
+      } else if (errCode === 'auth/popup-blocked') {
+        toastError(
+          'เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป Google Login',
+          'กรุณาอนุญาตป๊อปอัป (Allow Pop-ups) สำหรับเว็บไซต์นี้ แล้วกดเข้าสู่ระบบอีกครั้ง'
+        );
+      } else {
+        toastError(
+          'เข้าสู่ระบบไม่สำเร็จ',
+          errMsg || 'กรุณาลองใหม่อีกครั้ง'
+        );
+      }
     } finally {
       setSigningIn(false);
     }
