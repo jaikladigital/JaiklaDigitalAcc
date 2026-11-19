@@ -60,6 +60,14 @@ function mapStatusLabel(status: EmergencyLinePayload['emergencyStatus']): string
   }
 }
 
+function formatThaiPaymentDate(raw?: string): string {
+  const clean = (raw || '').trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(clean);
+  if (!match) return clean || '-';
+  const yearBe = Number(match[1]) + 543;
+  return `${match[3]}/${match[2]}/${yearBe}`;
+}
+
 export function buildEmergencyPlainMessage(payload: EmergencyLinePayload): string {
   const payerBadge = payload.payerType === 'supplier' ? 'ซัพพลายเยอร์' : 'พนักงาน';
   const statusText = mapStatusLabel(payload.emergencyStatus);
@@ -81,7 +89,7 @@ export function buildEmergencyPlainMessage(payload: EmergencyLinePayload): strin
     payload.vendorOrPayee ? `• ร้านค้า / ผู้รับเงินปลายทาง: ${payload.vendorOrPayee}` : '',
     `• รายการค่าใช้จ่าย: ${payload.description}`,
     payload.urgencyReason ? `• เหตุผลฉุกเฉิน: ${payload.urgencyReason}` : '',
-    `• วันที่จ่ายเงินสด: ${payload.paymentDate}`,
+    `• วันที่จ่ายเงินสด: ${formatThaiPaymentDate(payload.paymentDate)}`,
     `• ยอดก่อนภาษี: ${formatNumber(payload.amount)} บาท`,
     payload.vatAmount > 0 ? `• VAT: ${formatNumber(payload.vatAmount)} บาท` : '',
     payload.whtAmount > 0 ? `• หัก ณ ที่จ่าย: -${formatNumber(payload.whtAmount)} บาท` : '',
@@ -220,7 +228,7 @@ export async function dispatchEmergencyLineNotification(
           margin: 'md',
           contents: [
             { type: 'text', text: 'วันที่จ่าย', size: 'xs', color: '#64748B', flex: 2 },
-            { type: 'text', text: payload.paymentDate, size: 'xs', color: '#0F172A', flex: 3, align: 'end' },
+            { type: 'text', text: formatThaiPaymentDate(payload.paymentDate), size: 'xs', color: '#0F172A', flex: 3, align: 'end' },
           ],
         },
         {

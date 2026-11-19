@@ -1,6 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import QRCode from 'qrcode';
+import Swal from 'sweetalert2';
 import {
+  AlertCircle,
   ArrowLeft,
   Camera,
   CheckCircle2,
@@ -12,7 +15,9 @@ import {
   Mail,
   MessageCircle,
   Phone,
+  QrCode,
   RotateCcw,
+  Smartphone,
   Upload,
   UserCheck,
   Users,
@@ -223,6 +228,21 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
     lineResult: ClientLineNotifyResult | null;
   } | null>(null);
   const [copiedMsg, setCopiedMsg] = useState(false);
+  const [lineLaunchStatus, setLineLaunchStatus] = useState<
+    'idle' | 'launching' | 'opened' | 'fallback_qr'
+  >('idle');
+  const [lineQrDataUrl, setLineQrDataUrl] = useState<string>('');
+  const [showQrPanel, setShowQrPanel] = useState<boolean>(false);
+  const recheckCleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (recheckCleanupRef.current) {
+        recheckCleanupRef.current();
+        recheckCleanupRef.current = null;
+      }
+    };
+  }, []);
 
   const taxBreakdown = calculateExpenseAmounts({
     mode: amountMode,
@@ -316,6 +336,13 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
     setExtraPhotoUrl('');
     setProcessingTarget(null);
     setCopiedMsg(false);
+    setLineLaunchStatus('idle');
+    setShowQrPanel(false);
+    setLineQrDataUrl('');
+    if (recheckCleanupRef.current) {
+      recheckCleanupRef.current();
+      recheckCleanupRef.current = null;
+    }
   };
 
   const clearSavedProfile = () => {
@@ -434,12 +461,15 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
         request: savedRequest,
         lineResult,
       });
-      toastSuccess(
-        `ส่งคำขอเบิกด่วน ${voucherNo} สำเร็จ`,
-        lineResult?.sentViaApi
-          ? `แจ้งเตือนไปยัง LINE ${oaId} อัตโนมัติแล้ว`
-          : `บันทึกคำขอแล้ว — กดปุ่มส่งเข้าแชท LINE ${oaId} ด้านล่างได้เลย`
-      );
+      setLineLaunchStatus('idle');
+      setShowQrPanel(false);
+      setCopiedMsg(false);
+
+      if (lineResult) {
+        await promptBeforeAutoLineLaunch(savedRequest, lineResult);
+      } else {
+        toastSuccess(`บันทึกคำขอเบิกด่วน ${voucherNo} สำเร็จ`);
+      }
     } catch (err) {
       toastError(
         'บันทึกคำขอไม่สำเร็จ',
@@ -447,6 +477,194 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const generateShortLineQr = async (
+    savedRequest: UrgentExpenseRequest,
+    lineRes: ClientLineNotifyResult
+  ) => {
+    try {
+      const shortPrompt = `แจ้งเบิกด่วน ${savedRequest.voucherNo} (${savedRequest.payerName} ฿${formatTHB(savedRequest.netPaid)})`;
+      const shortDeepLink = `https://line.me/R/oaMessage/${encodeURIComponent(
+        lineRes.oaId
+      )}/?${encodeURIComponent(shortPrompt)}`;
+      const qrData = await QRCode.toDataURL(shortDeepLink, {
+        width: 240,
+        margin: 2,
+        color: { dark: '#0f172a', light: '#ffffff' },
+      });
+      setLineQrDataUrl(qrData);
+    } catch {
+      setLineQrDataUrl('');
+    }
+  };
+
+  const startLineVisibilityRecheck = () => {
+    if (recheckCleanupRef.current) {
+      recheckCleanupRef.current();
+      recheckCleanupRef.current = null;
+    }
+
+    setLineLaunchStatus('launching');
+
+    let settled = false;
+    const finishCheck = (nextStatus: 'opened' | 'fallback_qr') => {
+      if (settled) return;
+      settled = true;
+      if (recheckCleanupRef.current) {
+        recheckCleanupRef.current();
+        recheckCleanupRef.current = null;
+      }
+      setLineLaunchStatus(nextStatus);
+      if (nextStatus === 'fallback_qr') {
+        setShowQrPanel(true);
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        finishCheck('opened');
+      }
+    };
+    const onBlur = () => {
+      window.setTimeout(() => {
+        if (document.visibilityState === 'hidden' || !document.hasFocus()) {
+          finishCheck('opened');
+        }
+      }, 250);
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', onBlur);
+    const timer = window.setTimeout(() => {
+      if (document.visibilityState === 'visible') {
+        finishCheck('fallback_qr');
+      } else {
+        finishCheck('opened');
+      }
+    }, 2600);
+
+    recheckCleanupRef.current = () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('blur', onBlur);
+    };
+  };
+
+  const launchLineChatWithRecheck = (deepLink: string) => {
+    startLineVisibilityRecheck();
+
+    // Trigger via an anchor element rather than window.open
+    const anchor = document.createElement('a');
+    anchor.href = deepLink;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  };
+
+  const promptBeforeAutoLineLaunch = async (
+    savedRequest: UrgentExpenseRequest,
+    lineRes: ClientLineNotifyResult
+  ) => {
+    void generateShortLineQr(savedRequest, lineRes);
+
+    let autoCopied = false;
+    try {
+      await navigator.clipboard.writeText(lineRes.formattedMessage);
+      autoCopied = true;
+      setCopiedMsg(true);
+    } catch {
+      autoCopied = false;
+    }
+
+    if (lineRes.sentViaApi) {
+      await Swal.fire({
+        icon: 'success',
+        title: `ส่งคำขอ ${savedRequest.voucherNo} เข้า LINE ${lineRes.oaId} แล้ว`,
+        customClass: { popup: 'jkd-swal-popup' },
+        html: `
+          <div class="text-left text-xs sm:text-sm text-slate-700 space-y-2 leading-relaxed">
+            <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900">
+              ✓ บันทึกข้อมูลและรูปใบเสร็จเข้าฝ่ายบัญชีแล้ว<br/>
+              ✓ ระบบส่งแจ้งเตือนเข้าห้องแชท <strong>LINE OA ${lineRes.oaId}</strong> อัตโนมัติเรียบร้อย
+            </div>
+            <div class="text-xs text-slate-500">
+              หากต้องการส่งหลักฐานเพิ่มเติมหรือพูดคุยกับฝ่ายบัญชี สามารถกดเปิดแชทได้จากหน้าจอถัดไป
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#0f766e',
+      });
+      return;
+    }
+
+    let countdownTimer: number | undefined;
+    let remaining = 3;
+    let shouldAutoLaunch = false;
+
+    const modalResult = await Swal.fire({
+      icon: 'success',
+      title: `บันทึกคำขอ ${savedRequest.voucherNo} เรียบร้อยแล้ว`,
+      customClass: { popup: 'jkd-swal-popup' },
+      showCancelButton: true,
+      confirmButtonText: `เปิดแอป LINE ส่งเข้า ${lineRes.oaId} ทันที`,
+      confirmButtonColor: '#06C755',
+      cancelButtonText: 'ไม่มีแอป LINE / ดู QR สำรอง',
+      cancelButtonColor: '#475569',
+      allowOutsideClick: false,
+      html: `
+        <div class="text-left text-xs sm:text-sm text-slate-700 space-y-2.5 leading-relaxed">
+          <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs">
+            ✓ ข้อมูลคำขอเบิกและรูปใบเสร็จถูกบันทึกเข้าฝ่ายบัญชีแล้ว<br/>
+            ${autoCopied ? '✓ คัดลอกข้อความสรุปคำขอไว้ให้ในคลิปบอร์ดแล้ว' : '✓ เตรียมข้อความสำหรับส่งเข้าห้องแชท LINE เรียบร้อย'}
+          </div>
+          <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-950 text-xs space-y-1">
+            <div class="font-bold">ขั้นตอนถัดไป: เปิดแชท LINE OA ${lineRes.oaId}</div>
+            <div>ระบบกำลังจะเปิดแอป LINE พร้อมข้อความคำขอให้คุณกด <strong>"ส่ง"</strong> ในแชท ${lineRes.oaId}</div>
+            <div class="font-semibold text-teal-800 pt-1">
+              กำลังเปิดแอป LINE อัตโนมัติใน <span id="jkd-line-countdown">3</span> วินาที...
+            </div>
+            <div class="text-[11px] text-slate-600">
+              * หากอุปกรณ์นี้ไม่ได้ติดตั้งแอป LINE ระบบจะรีเช็คและแสดง QR Code สำหรับสแกนจากมือถืออีกเครื่องให้ทันที
+            </div>
+          </div>
+        </div>
+      `,
+      didOpen: () => {
+        const countEl = document.getElementById('jkd-line-countdown');
+        countdownTimer = window.setInterval(() => {
+          remaining -= 1;
+          if (countEl) {
+            countEl.textContent = String(Math.max(0, remaining));
+          }
+          if (remaining <= 0) {
+            if (countdownTimer) {
+              window.clearInterval(countdownTimer);
+              countdownTimer = undefined;
+            }
+            shouldAutoLaunch = true;
+            Swal.close();
+          }
+        }, 1000);
+      },
+      willClose: () => {
+        if (countdownTimer) {
+          window.clearInterval(countdownTimer);
+          countdownTimer = undefined;
+        }
+      },
+    });
+
+    if (modalResult.isConfirmed || shouldAutoLaunch) {
+      launchLineChatWithRecheck(lineRes.oaDeepLink);
+    } else if (modalResult.dismiss === Swal.DismissReason.cancel) {
+      setLineLaunchStatus('fallback_qr');
+      setShowQrPanel(true);
     }
   };
 
@@ -502,8 +720,39 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                     ✓ ระบบได้ส่งแจ้งเตือนอัตโนมัติเข้าสู่ LINE OA {lineResult.oaId} เรียบร้อยแล้ว
                   </div>
                   <div className="text-xs text-emerald-800 leading-relaxed">
-                    หากไม่ได้กรอก LINE ID ไว้ สามารถกดปุ่มสีเขียวด้านล่างเพื่อทักเข้าห้องแชท{' '}
-                    <strong className="font-mono-num">{lineResult.oaId}</strong> เพื่อให้ฝ่ายบัญชีเห็นโปรไฟล์ LINE และตอบกลับได้ทันที
+                    หากต้องการทักคุยหรือส่งหลักฐานเพิ่มเติม สามารถกดปุ่มสีเขียวด้านล่างเพื่อเปิดห้องแชท{' '}
+                    <strong className="font-mono-num">{lineResult.oaId}</strong> ได้ทันที
+                  </div>
+                </div>
+              ) : lineLaunchStatus === 'launching' ? (
+                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs sm:text-sm space-y-1">
+                  <div className="font-semibold">
+                    กำลังเปิดแอป LINE เพื่อส่งเข้าแชท {lineResult.oaId} และตรวจสอบอุปกรณ์...
+                  </div>
+                  <div className="text-xs text-blue-800">
+                    หากแอป LINE ไม่เปิดขึ้นภายใน 3 วินาที ระบบจะแสดง QR Code และทางเลือกสำรองให้อัตโนมัติ
+                  </div>
+                </div>
+              ) : lineLaunchStatus === 'opened' ? (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm space-y-1">
+                  <div className="font-semibold">
+                    ✓ เปิดแอป LINE สำเร็จแล้ว — อย่าลืมกดปุ่ม &ldquo;ส่ง (Send)&rdquo; ในห้องแชท {lineResult.oaId}
+                  </div>
+                  <div className="text-xs text-emerald-800">
+                    ข้อความสรุปคำขอ <strong className="font-mono-num">{request.voucherNo}</strong> ถูกคัดลอกไว้ให้แล้ว สามารถวางซ้ำในแชทได้ทันทีหากข้อความไม่ขึ้นอัตโนมัติ
+                  </div>
+                </div>
+              ) : lineLaunchStatus === 'fallback_qr' ? (
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs leading-relaxed space-y-1.5">
+                  <div className="font-bold flex items-center gap-1.5 text-sm">
+                    <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>รีเช็คอุปกรณ์: ยังไม่พบการเปิดแอป LINE อัตโนมัติ</span>
+                  </div>
+                  <div>
+                    อุปกรณ์นี้อาจ <strong>ไม่ได้ติดตั้งแอป LINE</strong> (เช่น คอมพิวเตอร์/แท็บเล็ต) หรือเบราว์เซอร์บล็อกการสลับแอปอัตโนมัติ
+                  </div>
+                  <div className="text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 font-medium">
+                    ✓ ไม่ต้องกังวล: คำขอ <strong>{request.voucherNo}</strong> และรูปใบเสร็จถูกบันทึกเข้าสู่ระบบบัญชีเรียบร้อยแล้ว 100%
                   </div>
                 </div>
               ) : (
@@ -512,6 +761,44 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                   <strong className="font-mono-num">{request.voucherNo}</strong> เข้าห้องแชท{' '}
                   <strong className="font-mono-num">{lineResult.oaId}</strong> ทันที
                   — ฝ่ายบัญชีจะเห็นโปรไฟล์ LINE ของคุณในแชทโดยไม่ต้องค้นหา LINE ID
+                </div>
+              )}
+
+              {(showQrPanel || lineLaunchStatus === 'fallback_qr') && (
+                <div className="p-4 rounded-xl border border-teal-200 bg-teal-50/50 space-y-3">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    {lineQrDataUrl ? (
+                      <div className="p-2 bg-white rounded-xl border border-slate-200 shrink-0">
+                        <img
+                          src={lineQrDataUrl}
+                          alt={`QR Code เปิดแชท LINE ${lineResult.oaId}`}
+                          className="w-36 h-36 object-contain"
+                        />
+                      </div>
+                    ) : null}
+                    <div className="space-y-1.5 text-xs text-slate-700 text-center sm:text-left">
+                      <div className="font-bold text-slate-900 flex items-center justify-center sm:justify-start gap-1.5">
+                        <Smartphone className="w-4 h-4 text-teal-700 shrink-0" />
+                        <span>วิธีส่งต่อเมื่อเครื่องนี้ไม่มีแอป LINE</span>
+                      </div>
+                      <ol className="m-0 pl-4 space-y-1 text-left">
+                        <li>ใช้มือถือที่มีแอป LINE สแกน QR Code นี้เพื่อเปิดแชท <strong>{lineResult.oaId}</strong> พร้อมเลขคำขอ</li>
+                        <li>หรือกดปุ่ม <strong>&ldquo;คัดลอกข้อความ&rdquo;</strong> ด้านล่าง แล้วส่งเข้า LINE บนเครื่องอื่น/อีเมล</li>
+                        <li>หรือกดปุ่มสีเขียวด้านล่างอีกครั้งเพื่ออนุญาตเปิดแอป LINE บนเครื่องนี้</li>
+                      </ol>
+                      <div className="pt-1">
+                        <a
+                          href={lineResult.addFriendLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-teal-700 font-semibold underline"
+                        >
+                          เปิดหน้าเพิ่มเพื่อน LINE OA {lineResult.oaId}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -524,6 +811,7 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                   href={lineResult.oaDeepLink}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={startLineVisibilityRecheck}
                   className="figma-btn flex-1 min-w-[220px] py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm inline-flex items-center justify-center gap-2 text-decoration-none"
                 >
                   <MessageCircle className="w-4 h-4 shrink-0" />
@@ -546,6 +834,16 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                   <Copy className="w-4 h-4" />
                   {copiedMsg ? 'คัดลอกแล้ว' : 'คัดลอกข้อความ'}
                 </button>
+                {lineQrDataUrl && lineLaunchStatus !== 'fallback_qr' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowQrPanel((v) => !v)}
+                    className="figma-btn py-2.5 px-3.5 rounded-xl border border-teal-300 bg-teal-50 text-teal-900 font-semibold text-sm inline-flex items-center gap-1.5"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    {showQrPanel ? 'ซ่อน QR' : 'QR สแกนเครื่องอื่น'}
+                  </button>
+                )}
               </div>
             </div>
           )}

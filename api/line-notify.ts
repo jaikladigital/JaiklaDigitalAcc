@@ -70,6 +70,14 @@ function mapStatusLabel(status: EmergencyLinePayload['emergencyStatus']): string
   }
 }
 
+function formatThaiPaymentDate(raw?: string): string {
+  const clean = (raw || '').trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(clean);
+  if (!match) return clean || '-';
+  const yearBe = Number(match[1]) + 543;
+  return `${match[3]}/${match[2]}/${yearBe}`;
+}
+
 export default async function handler(req: VercelRequestLike, res: VercelResponseLike) {
   try {
     if (req.method !== 'POST') {
@@ -132,7 +140,7 @@ export default async function handler(req: VercelRequestLike, res: VercelRespons
       payload.vendorOrPayee ? `• ร้านค้า / ผู้รับเงินปลายทาง: ${payload.vendorOrPayee}` : '',
       `• รายการค่าใช้จ่าย: ${payload.description}`,
       payload.urgencyReason ? `• เหตุผลฉุกเฉิน: ${payload.urgencyReason}` : '',
-      `• วันที่จ่ายเงินสด: ${payload.paymentDate}`,
+      `• วันที่จ่ายเงินสด: ${formatThaiPaymentDate(payload.paymentDate)}`,
       `• ยอดก่อนภาษี: ${formatNumber(payload.amount)} บาท`,
       payload.vatAmount > 0 ? `• VAT: ${formatNumber(payload.vatAmount)} บาท` : '',
       payload.whtAmount > 0 ? `• หัก ณ ที่จ่าย: -${formatNumber(payload.whtAmount)} บาท` : '',
