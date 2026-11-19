@@ -44,6 +44,7 @@ import {
 import { formatThaiLineBreaks } from '../utils/thaiText';
 import { toastError, toastSuccess } from '../utils/swal';
 import { FinancialStatementPrintModal } from '../components/FinancialStatementPrintModal';
+import { ThaiText } from '../components/ThaiText';
 
 interface AnnualReportsViewProps {
   documents: AccountingDocument[];
@@ -341,16 +342,12 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
     <div className="space-y-5 sm:space-y-6 animate-figma-in">
       {/* Header */}
       <div className="flex flex-col items-center text-center gap-2.5 sm:gap-3 pb-1">
-        <div className="min-w-0 max-w-3xl px-1">
+        <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks(
-              'งบดุล งบการเงินประจำปี บทวิเคราะห์ และเอกสารยื่น DBD / สรรพากร'
-            )}
+            <ThaiText text="งบการเงินประจำปีและยื่นภาษี DBD" />
           </h1>
-          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
-            {formatThaiLineBreaks(
-              'จัดทำงบฐานะการเงิน งบกำไรขาดทุน งบเปลี่ยนแปลงส่วนของผู้ถือหุ้น หมายเหตุประกอบงบ 1–8 พร้อมบทวิเคราะห์และแบบยื่น ภ.ง.ด. 50 / ส.บช.3'
-            )}
+          <p className="thai-subtitle mt-1.5 mb-0">
+            <ThaiText text="จัดทำงบฐานะการเงิน งบกำไรขาดทุน หมายเหตุประกอบงบ 1–8 พร้อมบทวิเคราะห์และแบบ ภ.ง.ด. 50 / ส.บช.3" />
           </p>
         </div>
 

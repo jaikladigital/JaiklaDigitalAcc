@@ -20,6 +20,7 @@ import {
 import {
   AlertTriangle,
   ArrowRight,
+  BarChart3,
   Building2,
   Copy,
   FileText,
@@ -30,6 +31,7 @@ import {
   LogOut,
   Menu,
   Receipt,
+  ScanLine,
   Settings,
   Truck,
   X,
@@ -61,8 +63,14 @@ import {
 } from './types/accounting';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FriendlyExpenseIconSVG, JaiklaLogoSVG } from './components/BrandAssets';
+import { BrandLockup } from './components/BrandLockup';
+import { DecorativeGraphicsLayer, LoginHeroDecor } from './components/DecorativeGraphicsLayer';
 import { PortalQrCard } from './components/PortalQrCard';
 import { PublicUrgentExpenseView } from './components/PublicUrgentExpenseView';
+import {
+  VisualEffectsProvider,
+  useVisualEffects,
+} from './contexts/VisualEffectsContext';
 import { DashboardView } from './views/DashboardView';
 import { DocumentsView } from './views/DocumentsView';
 import { CustomersView } from './views/CustomersView';
@@ -116,6 +124,7 @@ const INITIAL_CATEGORIES = [
 ];
 
 function MainApp() {
+  const { showGraphics, setShowGraphics } = useVisualEffects();
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
@@ -262,6 +271,9 @@ function MainApp() {
             ...data,
             logoUrl: data.logoUrl || DEFAULT_COMPANY_LOGO,
           });
+          if (typeof data.showGraphics === 'boolean') {
+            setShowGraphics(data.showGraphics);
+          }
         }
       },
       (err) => handleFirestoreError(err, OperationType.GET, 'settings/company_profile')
@@ -383,7 +395,7 @@ function MainApp() {
       unsubTeam();
       unsubUrgentRequests();
     };
-  }, [authReady, user]);
+  }, [authReady, user, setShowGraphics]);
 
   const teamUids = useMemo(() => {
     const uids = new Set<string>();
@@ -496,10 +508,16 @@ function MainApp() {
   // Auth Loading State
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <JaiklaLogoSVG className="w-12 h-12 mx-auto" />
-          <div className="text-sm font-medium text-slate-600">กำลังเชื่อมต่อระบบบัญชี...</div>
+      <div className="relative min-h-screen bg-slate-50 flex items-center justify-center p-4 overflow-hidden">
+        <DecorativeGraphicsLayer variant="login" />
+        <div className="relative z-10 max-w-sm w-full">
+          <BrandLockup
+            size="md"
+            companyNameTh={company.companyNameTh}
+            companyNameEn={company.companyNameEn}
+            logoUrl={company.logoUrl}
+            subtitle="กำลังเชื่อมต่อระบบบัญชี..."
+          />
         </div>
       </div>
     );
@@ -532,93 +550,121 @@ function MainApp() {
       subdistrictSplitIdx > 0 ? resolvedAddress.slice(subdistrictSplitIdx).trim() : '';
 
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-3 sm:p-4">
-        <div className="max-w-[540px] w-full figma-card p-4 sm:p-5 animate-figma-in text-center">
-          {/* Single-Line Brand & System Title */}
-          <div className="flex items-center justify-center gap-3 mb-4 text-left">
-            <JaiklaLogoSVG className="w-12 h-12 sm:w-14 sm:h-14 shrink-0" logoUrl={company.logoUrl} />
-            <div className="min-w-0 flex-1">
-              <h1 className="!text-[17px] sm:!text-[20px] font-bold text-slate-900 m-0 !leading-[1.38] whitespace-nowrap truncate">
-                {company.companyNameTh}
-              </h1>
-              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider leading-[1.35] truncate">
-                {company.companyNameEn}
-              </div>
-              <div className="text-xs sm:text-[13px] font-medium text-slate-700 mt-0.5 leading-[1.4]">
-                ระบบออกเอกสารบัญชีและงบประมาณบริษัท
-              </div>
-            </div>
-          </div>
+      <div className="relative min-h-screen bg-slate-50 flex flex-col items-center justify-center p-3.5 sm:p-6 overflow-x-hidden">
+        <DecorativeGraphicsLayer variant="login" />
 
-          {/* Primary & Friendly Actions with clear Thai vowel breathing room */}
-          <div className="flex flex-col gap-2.5">
-            <button
-              type="button"
-              disabled={signingIn}
-              onClick={handleGoogleSignIn}
-              className="figma-btn !rounded-xl w-full py-2.5 px-4 bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 inline-flex items-center justify-center gap-2 border-0"
-            >
-              <LogIn className="w-4 h-4 shrink-0" />
-              <span>{signingIn ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google Account'}</span>
-            </button>
+        <div
+          className={`relative z-10 max-w-[560px] w-full figma-card p-5 sm:p-7 animate-figma-in text-center overflow-hidden ${
+            showGraphics ? 'shadow-xl border-indigo-100/90' : ''
+          }`}
+        >
+          <LoginHeroDecor />
 
-            <div className="flex flex-col items-center">
+          <div className="relative z-10">
+            {/* Uniform Centered Brand Lockup */}
+            <BrandLockup
+              size="lg"
+              companyNameTh={company.companyNameTh}
+              companyNameEn={company.companyNameEn}
+              logoUrl={company.logoUrl}
+              subtitle="ระบบออกเอกสารบัญชีและงบประมาณบริษัท"
+              className="mb-4 pt-1"
+            />
+
+            {/* Switchable 3-Column Architectural Capability Highlights */}
+            {showGraphics && (
+              <div className="grid grid-cols-3 divide-x divide-slate-200/80 rounded-xl border border-indigo-100/80 bg-slate-50/80 py-2.5 px-1.5 mb-4">
+                <div className="flex flex-col items-center justify-center gap-1 px-1">
+                  <FileText className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span className="text-[11px] font-semibold text-slate-700 leading-tight">
+                    ออกบิล QT·INV·REC
+                  </span>
+                </div>
+                <div className="flex flex-col items-center justify-center gap-1 px-1">
+                  <ScanLine className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span className="text-[11px] font-semibold text-slate-700 leading-tight">
+                    สแกนบิล &amp; 50 ทวิ
+                  </span>
+                </div>
+                <div className="flex flex-col items-center justify-center gap-1 px-1">
+                  <BarChart3 className="w-4 h-4 text-violet-600 shrink-0" />
+                  <span className="text-[11px] font-semibold text-slate-700 leading-tight">
+                    งบดุล &amp; LINE OA
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Primary & Friendly Actions with clear Thai vowel breathing room */}
+            <div className="flex flex-col gap-2.5">
               <button
                 type="button"
-                onClick={() => setPublicUrgentOpen(true)}
-                className="figma-btn friendly-expense-btn !rounded-xl w-full py-2.5 px-4 bg-teal-50 hover:bg-teal-100/80 text-teal-900 border border-teal-200 hover:border-teal-300 font-semibold inline-flex items-center justify-center gap-2 text-sm shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
+                disabled={signingIn}
+                onClick={handleGoogleSignIn}
+                className="figma-btn !rounded-xl w-full py-2.5 px-4 bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 inline-flex items-center justify-center gap-2 border-0 shadow-xs"
               >
-                <FriendlyExpenseIconSVG className="w-5 h-5" />
-                <span className="whitespace-nowrap">แจ้งเบิกค่าใช้จ่ายโครงการ</span>
-                <ArrowRight className="w-4 h-4 text-teal-700 friendly-arrow shrink-0" />
+                <LogIn className="w-4 h-4 shrink-0" />
+                <span>{signingIn ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google Account'}</span>
               </button>
-              <div className="mt-2 text-[11px] text-slate-500 leading-[1.6]">
-                ส่งบิลหน้างานได้ทันที ไม่ต้องเข้าสู่ระบบ
+
+              <div className="flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={() => setPublicUrgentOpen(true)}
+                  className="figma-btn friendly-expense-btn !rounded-xl w-full py-2.5 px-4 bg-teal-50 hover:bg-teal-100/80 text-teal-900 border border-teal-200 hover:border-teal-300 font-semibold inline-flex items-center justify-center gap-2 text-sm shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
+                >
+                  <FriendlyExpenseIconSVG className="w-5 h-5" />
+                  <span className="whitespace-nowrap">แจ้งเบิกค่าใช้จ่ายโครงการ</span>
+                  <ArrowRight className="w-4 h-4 text-teal-700 friendly-arrow shrink-0" />
+                </button>
+                <div className="mt-2 text-[11px] text-slate-500 leading-[1.6]">
+                  ส่งบิลหน้างานได้ทันที ไม่ต้องเข้าสู่ระบบ
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* QR Code Quick Access for LINE Sharing */}
-          <PortalQrCard
-            companyNameTh={company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh}
-            companyNameEn={company.companyNameEn || DEFAULT_COMPANY_PROFILE.companyNameEn}
-          />
+            {/* QR Code Quick Access for LINE Sharing */}
+            <PortalQrCard
+              companyNameTh={company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh}
+              companyNameEn={company.companyNameEn || DEFAULT_COMPANY_PROFILE.companyNameEn}
+            />
 
-          {/* Compact Billing Header Footer */}
-          <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-600 text-center space-y-1.5 leading-[1.45]">
-            <div className="select-all space-y-0.5">
-              <div className="font-semibold text-slate-800 leading-[1.4]">
-                {company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh} · เลขประจำตัวผู้เสียภาษี :{' '}
-                <span className="font-mono-num">
-                  {(company.taxId || DEFAULT_COMPANY_PROFILE.taxId).replace(/\D/g, '') || DEFAULT_COMPANY_PROFILE.taxId}
-                </span>
+            {/* Compact Billing Header Footer */}
+            <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-600 text-center space-y-1.5 leading-[1.45]">
+              <div className="select-all space-y-0.5">
+                <div className="font-semibold text-slate-800 leading-[1.4]">
+                  {company.companyNameTh || DEFAULT_COMPANY_PROFILE.companyNameTh} · เลขประจำตัวผู้เสียภาษี :{' '}
+                  <span className="font-mono-num">
+                    {(company.taxId || DEFAULT_COMPANY_PROFILE.taxId).replace(/\D/g, '') || DEFAULT_COMPANY_PROFILE.taxId}
+                  </span>
+                </div>
+                <div className="leading-[1.45]">สถานที่ตั้ง {addrLine1}</div>
+                {addrLine2 && (
+                  <div className="leading-[1.45] whitespace-nowrap">{addrLine2}</div>
+                )}
+                <div className="font-mono-num leading-[1.4]">
+                  โทรศัพท์{' '}
+                  {company.phone && company.phone !== '02-000-0000'
+                    ? company.phone
+                    : DEFAULT_COMPANY_PROFILE.phone}
+                </div>
               </div>
-              <div className="leading-[1.45]">สถานที่ตั้ง {addrLine1}</div>
-              {addrLine2 && (
-                <div className="leading-[1.45] whitespace-nowrap">{addrLine2}</div>
-              )}
-              <div className="font-mono-num leading-[1.4]">
-                โทรศัพท์{' '}
-                {company.phone && company.phone !== '02-000-0000'
-                  ? company.phone
-                  : DEFAULT_COMPANY_PROFILE.phone}
-              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(buildCompanyBillingHeaderText(company));
+                    toastSuccess('คัดลอกข้อมูลหัวบิลบริษัทเรียบร้อย', 'สามารถนำไปวางส่งต่อให้ร้านค้าเพื่อออกใบกำกับภาษีได้ทันที');
+                  } catch {
+                    toastError('ไม่สามารถคัดลอกข้อความได้');
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 !rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-slate-700"
+              >
+                <Copy className="w-3 h-3" />
+                คัดลอกข้อมูลหัวบิลบริษัท
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(buildCompanyBillingHeaderText(company));
-                  toastSuccess('คัดลอกข้อมูลหัวบิลบริษัทเรียบร้อย', 'สามารถนำไปวางส่งต่อให้ร้านค้าเพื่อออกใบกำกับภาษีได้ทันที');
-                } catch {
-                  toastError('ไม่สามารถคัดลอกข้อความได้');
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 !rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-slate-700"
-            >
-              <Copy className="w-3 h-3" />
-              คัดลอกข้อมูลหัวบิลบริษัท
-            </button>
           </div>
         </div>
       </div>
@@ -626,19 +672,19 @@ function MainApp() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+    <div className="relative min-h-screen bg-slate-50 flex flex-col lg:flex-row overflow-x-hidden">
+      <DecorativeGraphicsLayer variant="workspace" />
+
       {/* Desktop Sidebar */}
       <aside className="no-print hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white border-r border-slate-200 z-30">
-        <div className="p-4 border-b border-slate-200 flex flex-col items-center text-center gap-2">
-          <JaiklaLogoSVG className="w-14 h-14 shrink-0" logoUrl={company.logoUrl} />
-          <div className="min-w-0 w-full">
-            <div className="text-sm font-bold text-slate-900 leading-[1.48] truncate py-0.5">
-              {company.companyNameTh}
-            </div>
-            <div className="text-[11px] font-medium text-slate-500 truncate leading-[1.4]">
-              Accounting &amp; Doc Suite
-            </div>
-          </div>
+        <div className="px-3.5 py-4 border-b border-slate-200">
+          <BrandLockup
+            size="sm"
+            companyNameTh={company.companyNameTh}
+            companyNameEn={company.companyNameEn}
+            logoUrl={company.logoUrl}
+            subtitle="Accounting & Doc Suite"
+          />
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -702,35 +748,40 @@ function MainApp() {
         </div>
       </aside>
 
-      {/* Mobile & Tablet Top App Bar (< lg) */}
+      {/* Mobile & Tablet Top App Bar (< lg) — Symmetric 3-column Centered Frame */}
       <header className="no-print lg:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
-        <div className="px-3.5 sm:px-5 h-[54px] flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <JaiklaLogoSVG className="w-8 h-8 shrink-0" logoUrl={company.logoUrl} />
-            <div className="min-w-0">
-              <div className="text-[13px] sm:text-sm font-bold text-slate-900 truncate leading-tight">
-                {NAV_ITEMS.find((n) => n.id === activeTab)?.label || company.companyNameTh}
-              </div>
-              <div className="text-[11px] text-slate-500 truncate leading-tight">
-                {company.companyNameTh}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden md:flex items-center gap-2 pe-2 border-r border-slate-200">
-              <span className="text-xs font-semibold text-slate-700 max-w-[140px] truncate">
+        <div className="px-3 sm:px-5 py-2 min-h-[62px] grid grid-cols-[44px_1fr_auto] sm:grid-cols-[128px_1fr_128px] items-center gap-2">
+          {/* Left Symmetry Slot */}
+          <div className="flex items-center min-w-0">
+            <div className="hidden md:flex flex-col min-w-0 leading-tight">
+              <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[115px]">
                 {user.displayName || user.email}
               </span>
-              <span className="text-[10px] font-bold uppercase font-mono-num text-slate-500">
+              <span className="text-[10px] font-bold uppercase font-mono-num text-slate-400">
                 {userProfile?.role || (user.email === 'jaikladigital@gmail.com' ? 'admin' : 'staff')}
               </span>
             </div>
+          </div>
 
+          {/* Centered Brand Identity Block */}
+          <div className="flex flex-col items-center justify-center text-center min-w-0">
+            <div className="flex items-center justify-center gap-1.5 max-w-full">
+              <JaiklaLogoSVG className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" logoUrl={company.logoUrl} />
+              <span className="text-[12.5px] sm:text-[13.5px] font-bold text-slate-900 truncate leading-tight">
+                {company.companyNameTh}
+              </span>
+            </div>
+            <div className="text-[11px] font-semibold text-indigo-700 truncate max-w-full leading-tight mt-0.5">
+              {NAV_ITEMS.find((n) => n.id === activeTab)?.label || 'ระบบบัญชีบริษัท'}
+            </div>
+          </div>
+
+          {/* Right Menu Trigger */}
+          <div className="flex items-center justify-end shrink-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="relative min-h-[42px] min-w-[42px] px-2.5 inline-flex items-center justify-center gap-1.5 text-slate-700 !rounded-xl bg-slate-100 hover:bg-slate-200 border-0 text-xs font-semibold"
+              className="relative min-h-[40px] min-w-[40px] px-2.5 inline-flex items-center justify-center gap-1.5 text-slate-700 !rounded-xl bg-slate-100 hover:bg-slate-200 border-0 text-xs font-semibold"
               aria-label="เปิดเมนูทั้งหมด"
             >
               <Menu className="w-4 h-4 shrink-0" />
@@ -794,23 +845,19 @@ function MainApp() {
             aria-label="เมนูนำทางระบบ"
             className="relative w-full max-w-[330px] h-full bg-white shadow-2xl flex flex-col animate-figma-in z-10"
           >
-            {/* Drawer Header */}
-            <div className="px-4 py-3.5 border-b border-slate-200 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <JaiklaLogoSVG className="w-9 h-9 shrink-0" logoUrl={company.logoUrl} />
-                <div className="min-w-0">
-                  <div className="text-sm font-bold text-slate-900 truncate leading-tight">
-                    {company.companyNameTh}
-                  </div>
-                  <div className="text-[11px] text-slate-500 truncate leading-tight">
-                    เมนูจัดการระบบทั้งหมด
-                  </div>
-                </div>
-              </div>
+            {/* Drawer Header — Centered Uniform Brand Lockup */}
+            <div className="relative px-4 pt-4 pb-3 border-b border-slate-200">
+              <BrandLockup
+                size="sm"
+                companyNameTh={company.companyNameTh}
+                companyNameEn={company.companyNameEn}
+                logoUrl={company.logoUrl}
+                subtitle="เมนูจัดการระบบทั้งหมด"
+              />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center !rounded-xl text-slate-600 hover:bg-slate-100 border-0 bg-transparent"
+                className="absolute top-3 right-3 min-h-[38px] min-w-[38px] inline-flex items-center justify-center !rounded-xl text-slate-600 hover:bg-slate-100 border-0 bg-transparent"
                 aria-label="ปิดเมนู"
               >
                 <X className="w-5 h-5" />
@@ -930,7 +977,7 @@ function MainApp() {
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] leading-tight whitespace-nowrap">
+                <span className="text-[11px] leading-tight whitespace-nowrap mt-0.5">
                   {item.shortLabel}
                 </span>
               </button>
@@ -953,13 +1000,13 @@ function MainApp() {
             >
               <Menu className="w-4 h-4" />
             </div>
-            <span className="text-[10px] leading-tight whitespace-nowrap">เมนูอื่น</span>
+            <span className="text-[11px] leading-tight whitespace-nowrap mt-0.5">เมนูอื่น</span>
           </button>
         </div>
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 lg:pl-64 min-w-0 pb-20 md:pb-6 lg:pb-0">
+      <main className="relative z-10 flex-1 lg:pl-64 min-w-0 pb-20 md:pb-6 lg:pb-0">
         <div className="max-w-[1440px] mx-auto p-3.5 sm:p-6 lg:p-8">
           {activeTab === 'dashboard' && (
             <DashboardView
@@ -1072,7 +1119,9 @@ function MainApp() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <MainApp />
+      <VisualEffectsProvider>
+        <MainApp />
+      </VisualEffectsProvider>
     </ErrorBoundary>
   );
 }

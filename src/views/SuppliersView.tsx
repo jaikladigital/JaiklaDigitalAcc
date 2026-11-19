@@ -19,6 +19,7 @@ import {
 import { formatTHB } from '../utils/formatters';
 import { confirmDelete, toastError, toastSuccess } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
+import { ThaiText } from '../components/ThaiText';
 
 interface SuppliersViewProps {
   suppliers: Supplier[];
@@ -271,12 +272,10 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({
       <div className="flex flex-col items-center text-center gap-3 pb-1">
         <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks('ซัพพลายเยอร์และเปรียบเทียบราคาตามประเภทบริการ')}
+            <ThaiText text="ซัพพลายเยอร์และเปรียบเทียบราคา" />
           </h1>
-          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
-            {formatThaiLineBreaks(
-              'จัดการฐานข้อมูลคู่ค้า เปรียบเทียบเรทราคาในแต่ละหมวดบริการ และปรับแต่งประเภทบริการได้เอง'
-            )}
+          <p className="thai-subtitle mt-1.5 mb-0">
+            <ThaiText text="จัดการฐานข้อมูลคู่ค้า เทียบเรทราคาตามประเภทบริการ และปรับแต่งหมวดหมู่ค่าใช้จ่ายได้เอง" />
           </p>
         </div>
 

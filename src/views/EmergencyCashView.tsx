@@ -84,6 +84,7 @@ import {
   MultiPageScanResult,
 } from '../components/MultiPageScannerModal';
 import { ThaiDatePickerField } from '../components/ThaiDatePickerField';
+import { ThaiText } from '../components/ThaiText';
 import { UrgentRequestEditModal } from '../components/UrgentRequestEditModal';
 import { UrgentRequestImportModal } from '../components/UrgentRequestImportModal';
 import {
@@ -777,17 +778,13 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
       {/* Header */}
       <div className="flex flex-col items-center text-center gap-3 pb-1">
         <div className="min-w-0 max-w-2xl px-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-[11px] sm:text-xs font-bold mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            Emergency Cash Disbursement &amp; LINE OA Alert
-          </div>
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks('เบิกจ่ายเงินสดฉุกเฉิน (พนักงาน / ซัพพลายเยอร์)')}
+            <ThaiText text="เบิกจ่ายเงินสดฉุกเฉิน (LINE OA)" />
           </h1>
-          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
-            {formatThaiLineBreaks(
-              `บันทึกการสำรองจ่ายเงินสดหน้างาน แนบรูปถ่ายใบเสร็จเพื่อดึงข้อมูลอัตโนมัติ ออกใบสำคัญจ่าย A4 และส่งแจ้งเตือนไปที่ LINE OA ${oaId}`
-            )}
+          <p className="thai-subtitle mt-1.5 mb-0">
+            <ThaiText
+              text={`บันทึกการสำรองจ่ายหน้างาน แนบรูปใบเสร็จ ออกใบสำคัญจ่าย A4 และส่งแจ้งเตือน LINE OA ${oaId}`}
+            />
           </p>
         </div>
 

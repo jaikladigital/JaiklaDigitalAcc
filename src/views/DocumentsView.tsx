@@ -59,6 +59,7 @@ import { auditDocumentWht, validateThaiTaxId } from '../utils/whtCompliance';
 import { A4DocumentPreview } from '../components/A4DocumentPreview';
 import { ResponsiveA4Frame } from '../components/ResponsiveA4Frame';
 import { ThaiDatePickerField } from '../components/ThaiDatePickerField';
+import { ThaiText } from '../components/ThaiText';
 import { EntityLegalType } from '../types/accounting';
 
 interface DocumentsViewProps {
@@ -1730,12 +1731,12 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
   return (
     <div className="space-y-5 animate-figma-in">
       <div className="flex flex-col items-center text-center gap-3 pb-1">
-        <div className="min-w-0 max-w-3xl px-1">
-          <h1 className="thai-heading thai-title-center !text-lg sm:!text-xl font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks('ระบบออกเอกสารบัญชี (ใบเสนอราคา · ใบแจ้งหนี้ · ใบเสร็จรับเงิน)')}
+        <div className="min-w-0 max-w-2xl px-1">
+          <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
+            <ThaiText text="ระบบออกเอกสารบัญชี (QT · INV · REC)" />
           </h1>
-          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1 mb-0">
-            สร้างเอกสารพร้อมแปลงข้ามเอกสารในคลิกเดียว แบ่งงวดชำระ คำนวณภาษี และพิมพ์ A4 PDF
+          <p className="thai-subtitle mt-1.5 mb-0">
+            <ThaiText text="ออกใบเสนอราคา ใบแจ้งหนี้ และใบเสร็จรับเงิน แปลงข้ามเอกสารในคลิกเดียว แบ่งงวดชำระ คำนวณภาษี และพิมพ์ A4 PDF" />
           </p>
         </div>
 
@@ -1783,7 +1784,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
                 key={tab.key}
                 type="button"
                 onClick={() => setTypeFilter(tab.key)}
-                className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 text-xs font-semibold !rounded-lg transition-colors whitespace-nowrap text-center border-0 ${
+                className={`min-h-[40px] px-2.5 sm:px-3 py-1.5 text-[12.5px] sm:text-xs font-semibold leading-snug !rounded-lg transition-colors whitespace-nowrap text-center border-0 ${
                   typeFilter === tab.key
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'bg-transparent text-slate-600 hover:text-slate-900'
@@ -1825,11 +1826,11 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
         {filteredDocs.length === 0 ? (
           <div className="figma-card p-6 text-center space-y-3">
             <Layers className="w-9 h-9 mx-auto text-slate-300" />
-            <div className="text-sm font-semibold text-slate-700">
+            <div className="text-sm font-bold text-slate-800">
               ยังไม่มีเอกสารในหมวดนี้
             </div>
-            <p className="text-xs text-slate-500 m-0 leading-relaxed">
-              แตะปุ่มด้านล่างเพื่อเริ่มต้นออกใบเสนอราคา ใบแจ้งหนี้ หรือใบเสร็จรับเงิน
+            <p className="thai-prose text-[13px] text-slate-500 m-0 max-w-xs mx-auto">
+              <ThaiText text="แตะปุ่มด้านล่างเพื่อเริ่มต้นออกใบเสนอราคา ใบแจ้งหนี้ หรือใบเสร็จรับเงิน" />
             </p>
             <button
               type="button"
@@ -2111,11 +2112,12 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
       </div>
 
       {/* Quick Guidance Strip */}
-      <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+      <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 text-[13px] sm:text-xs text-slate-600">
         <div className="flex items-start sm:items-center gap-2">
           <Sparkles className="w-4 h-4 text-blue-700 shrink-0 mt-0.5 sm:mt-0" />
-          <span className="leading-relaxed">
-            <strong>Workflow แนะนำ:</strong> สร้างใบเสนอราคา (QUO) → กดปุ่ม &ldquo;ออก INV&rdquo; เพื่อวางบิลเต็มจำนวนหรือแบ่งงวด → กด &ldquo;ออกใบเสร็จ&rdquo; เพื่อรับชำระเงินและบันทึกงบประมาณอัตโนมัติ
+          <span className="thai-prose leading-relaxed">
+            <strong>Workflow แนะนำ:</strong>{' '}
+            <ThaiText text="สร้างใบเสนอราคา (QT) → กดปุ่ม “ออก INV” เพื่อวางบิลเต็มจำนวนหรือแบ่งงวด → กด “ออกใบเสร็จรับเงิน” เพื่อรับชำระเงินและบันทึกงบประมาณอัตโนมัติ" />
           </span>
         </div>
       </div>

@@ -6,6 +6,7 @@ import {
   Building2,
   CheckCircle2,
   Landmark,
+  Lock,
   RefreshCw,
   Save,
   ShieldCheck,
@@ -32,6 +33,8 @@ import { HISTORICAL_OFFICE_ADDRESS_2562_2568 } from '../utils/financialStatement
 import { closeSwal, showUploadLoading, toastError, toastSuccess } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
 import { JaiklaLogoSVG, JaiklaSignatureSVG, JaiklaStampSVG } from '../components/BrandAssets';
+import { ThaiText } from '../components/ThaiText';
+import { VisualEffectsToggle, useVisualEffects } from '../contexts/VisualEffectsContext';
 
 interface DbdLookupResponse {
   juristicId: string;
@@ -79,12 +82,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   teamMembers,
   annualLedgers = [],
 }) => {
+  const { showGraphics, setShowGraphics } = useVisualEffects();
   const isAdmin =
     currentUserProfile?.role === 'admin' ||
     auth.currentUser?.email === 'jaikladigital@gmail.com';
 
   const [form, setForm] = useState<CompanyProfile>(company);
   const [saving, setSaving] = useState(false);
+  const [savingGraphics, setSavingGraphics] = useState(false);
   const [syncOpenLedgers, setSyncOpenLedgers] = useState(true);
 
   const [dbdLoading, setDbdLoading] = useState(false);
@@ -313,6 +318,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         signatureUrl: (form.signatureUrl || '').slice(0, 1000),
         lineOaId: (form.lineOaId || '@421khbew').trim().slice(0, 60),
         directorName: cleanDirector,
+        showGraphics: typeof form.showGraphics === 'boolean' ? form.showGraphics : showGraphics,
         updatedBy: uid,
         updatedAt: serverTimestamp(),
       };
@@ -409,13 +415,91 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     <div className="space-y-5 sm:space-y-6 animate-figma-in">
       <div className="text-center max-w-2xl mx-auto pb-1 px-1">
         <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-          {formatThaiLineBreaks('ตั้งค่าบริษัท ระบบภาษีหลังบ้าน และซิงค์ข้อมูล DBD')}
+          <ThaiText text="ตั้งค่าบริษัท ระบบภาษี และซิงค์ DBD" />
         </h1>
-        <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
-          {formatThaiLineBreaks(
-            'ศูนย์กลางข้อมูลนิติบุคคลที่ซิงค์จากกรมพัฒนาธุรกิจการค้า (DBD) และอัปเดตอัตโนมัติไปยังใบเสนอราคา ใบแจ้งหนี้ ใบเสร็จ 50 ทวิ และงบปี 2569+'
-          )}
+        <p className="thai-subtitle mt-1.5 mb-0">
+          <ThaiText text="ข้อมูลนิติบุคคลที่ซิงค์จาก DBD สำหรับเชื่อมต่อไปยังใบเสนอราคา ใบแจ้งหนี้ ใบเสร็จรับเงิน 50 ทวิ และงบประจำปี" />
         </p>
+      </div>
+
+      {/* Appearance & Visual Gimmicks Toggle Card (Admin-only control persisted in Firestore) */}
+      <div className="figma-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <div className="text-sm font-bold text-slate-900 flex flex-wrap items-center gap-1.5">
+            <Sparkles className={`w-4 h-4 ${showGraphics ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span>ลวดลายกราฟิกและกิมมิกตกแต่งหน้าจอ</span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10.5px] font-semibold text-slate-700">
+              {isAdmin ? (
+                <>
+                  <ShieldCheck className="w-3 h-3 text-indigo-600" />
+                  สิทธิ์ Admin · บันทึกค่าอัตโนมัติ
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3 h-3 text-slate-500" />
+                  เฉพาะ Admin เท่านั้น
+                </>
+              )}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 m-0 leading-relaxed">
+            {isAdmin
+              ? 'เปิดหรือปิดลายจุดสถาปัตยกรรม ลายเส้นเรขาคณิต และกิมมิกตกแต่งหน้าเข้าสู่ระบบ ระบบจะจดจำและซิงค์ค่าให้ทุกหน้าจออัตโนมัติ'
+              : `สถานะปัจจุบัน: ${showGraphics ? 'เปิดใช้งานลวดลายกราฟิก' : 'ปิดลวดลายกราฟิก (โทนเรียบ)'} — เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถปรับเปลี่ยนได้`}
+          </p>
+        </div>
+        <VisualEffectsToggle
+          className="shrink-0"
+          disabled={!isAdmin}
+          saving={savingGraphics}
+          onTogglePersist={async (next) => {
+            const uid = auth.currentUser?.uid;
+            if (!isAdmin || !uid) {
+              setShowGraphics(company.showGraphics ?? true);
+              toastError('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่ปรับเปลี่ยนการตั้งค่านี้ได้');
+              return;
+            }
+            setForm((prev) => ({ ...prev, showGraphics: next }));
+            setSavingGraphics(true);
+            try {
+              await updateDoc(doc(db, 'settings', 'company_profile'), {
+                showGraphics: next,
+                updatedBy: uid,
+                updatedAt: serverTimestamp(),
+              });
+              toastSuccess(
+                next ? 'เปิดใช้งานลวดลายกราฟิกและกิมมิกแล้ว' : 'ปิดลวดลายกราฟิก (โหมดเรียบสะอาดตา) แล้ว',
+                'ระบบบันทึกและจดจำค่าการแสดงผลเรียบร้อย'
+              );
+            } catch (error: unknown) {
+              const code = (error as { code?: string })?.code || '';
+              if (code === 'not-found') {
+                try {
+                  await setDoc(doc(db, 'settings', 'company_profile'), {
+                    ...DEFAULT_COMPANY_PROFILE,
+                    ...company,
+                    showGraphics: next,
+                    updatedBy: uid,
+                    updatedAt: serverTimestamp(),
+                  });
+                  toastSuccess(
+                    next ? 'เปิดใช้งานลวดลายกราฟิกและกิมมิกแล้ว' : 'ปิดลวดลายกราฟิก (โหมดเรียบสะอาดตา) แล้ว',
+                    'ระบบบันทึกและจดจำค่าการแสดงผลเรียบร้อย'
+                  );
+                  return;
+                } catch (nestedErr) {
+                  setShowGraphics(company.showGraphics ?? true);
+                  handleFirestoreError(nestedErr, OperationType.WRITE, 'settings/company_profile');
+                }
+              } else {
+                setShowGraphics(company.showGraphics ?? true);
+                handleFirestoreError(error, OperationType.UPDATE, 'settings/company_profile');
+              }
+            } finally {
+              setSavingGraphics(false);
+            }
+          }}
+        />
       </div>
 
       {!isAdmin && (

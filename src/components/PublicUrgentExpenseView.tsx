@@ -45,7 +45,9 @@ import {
 } from '../utils/lineClient';
 import { toastError, toastSuccess } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
-import { FriendlyExpenseIconSVG, JaiklaLogoSVG } from './BrandAssets';
+import { FriendlyExpenseIconSVG } from './BrandAssets';
+import { BrandLockup } from './BrandLockup';
+import { DecorativeGraphicsLayer } from './DecorativeGraphicsLayer';
 import { ThaiDatePickerField } from './ThaiDatePickerField';
 
 interface PublicUrgentExpenseViewProps {
@@ -633,8 +635,16 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
   if (submittedReceipt) {
     const { request, lineResult } = submittedReceipt;
     return (
-      <div className="min-h-screen bg-slate-50 py-6 px-4 sm:px-6 flex items-center justify-center">
-        <div className="max-w-xl w-full figma-card p-6 sm:p-8 space-y-5 animate-figma-in">
+      <div className="relative min-h-screen bg-slate-50 py-6 px-4 sm:px-6 flex items-center justify-center overflow-x-hidden">
+        <DecorativeGraphicsLayer variant="login" />
+        <div className="relative z-10 max-w-xl w-full figma-card p-6 sm:p-8 space-y-5 animate-figma-in">
+          <BrandLockup
+            size="sm"
+            companyNameTh={company.companyNameTh}
+            companyNameEn={company.companyNameEn}
+            logoUrl={company.logoUrl}
+            subtitle="ระบบแจ้งเบิกค่าใช้จ่ายโครงการ"
+          />
           <div className="text-center space-y-2">
             <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8" />
@@ -833,30 +843,30 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-5 px-3 sm:px-6">
-      <div className="max-w-3xl mx-auto space-y-5 animate-figma-in">
-        {/* Top bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <JaiklaLogoSVG className="w-10 h-10 shrink-0" logoUrl={company.logoUrl} />
-            <div className="min-w-0">
-              <div className="text-sm font-bold text-slate-900 truncate">
-                {company.companyNameTh}
-              </div>
-              <div className="text-xs text-teal-700 font-medium">
-                แจ้งเบิกค่าใช้จ่ายโครงการ · ไม่ต้องเข้าสู่ระบบ
-              </div>
-            </div>
-          </div>
-
+    <div className="relative min-h-screen bg-slate-50 py-5 px-3 sm:px-6 overflow-x-hidden">
+      <DecorativeGraphicsLayer variant="login" />
+      <div className="relative z-10 max-w-3xl mx-auto space-y-4 sm:space-y-5 animate-figma-in">
+        {/* Top Action Strip */}
+        <div className="flex items-center justify-end">
           <button
             type="button"
             onClick={onBackToLogin}
-            className="figma-btn inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg whitespace-nowrap"
+            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl whitespace-nowrap"
           >
             <ArrowLeft className="w-4 h-4" />
             กลับหน้าเข้าสู่ระบบ
           </button>
+        </div>
+
+        {/* Centered Uniform Brand Lockup Card */}
+        <div className="bg-white/95 border border-slate-200 rounded-2xl px-4 py-5 shadow-xs">
+          <BrandLockup
+            size="md"
+            companyNameTh={company.companyNameTh}
+            companyNameEn={company.companyNameEn}
+            logoUrl={company.logoUrl}
+            subtitle="ระบบแจ้งเบิกค่าใช้จ่ายโครงการ · ไม่ต้องเข้าสู่ระบบ"
+          />
         </div>
 
         {/* Form Card */}

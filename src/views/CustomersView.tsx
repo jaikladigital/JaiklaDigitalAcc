@@ -19,6 +19,7 @@ import {
 import { formatTHB } from '../utils/formatters';
 import { confirmDelete, toastError, toastSuccess } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
+import { ThaiText } from '../components/ThaiText';
 
 interface CustomersViewProps {
   customers: Customer[];
@@ -206,12 +207,10 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       <div className="flex flex-col items-center text-center gap-3 pb-1">
         <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks('ฐานข้อมูลลูกค้าและการวิเคราะห์ภาษีรายลูกค้า')}
+            <ThaiText text="ฐานข้อมูลลูกค้าและวิเคราะห์ภาษี" />
           </h1>
-          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
-            {formatThaiLineBreaks(
-              'บันทึกข้อมูลลูกค้าเพื่อใช้ดึงอัตโนมัติในใบเสนอราคา/แจ้งหนี้ และวิเคราะห์ยอดใช้บริการสะสม'
-            )}
+          <p className="thai-subtitle mt-1.5 mb-0">
+            <ThaiText text="บันทึกข้อมูลลูกค้าเพื่อดึงอัตโนมัติในใบเสนอราคา ใบแจ้งหนี้ และวิเคราะห์ยอดใช้บริการสะสม" />
           </p>
         </div>
         <button

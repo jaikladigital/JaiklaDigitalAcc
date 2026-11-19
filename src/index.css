@@ -15,12 +15,13 @@
   --jkd-border: #e2e8f0;
   --ease-figma: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Fluid Responsive Typography Scales (Mobile-first & Tablet-ready) */
-  --jkd-text-h1: clamp(1.1rem, 1.15vw + 0.72rem, 1.38rem);
-  --jkd-text-h2: clamp(0.95rem, 0.7vw + 0.72rem, 1.125rem);
-  --jkd-text-body: clamp(0.875rem, 0.25vw + 0.8rem, 0.9375rem);
-  --jkd-text-sm: clamp(0.78rem, 0.18vw + 0.72rem, 0.85rem);
-  --jkd-text-xs: clamp(0.72rem, 0.14vw + 0.68rem, 0.78rem);
+  /* Fluid Responsive Typography Scales (Mobile-first, Tablet & Desktop Balanced) */
+  --jkd-text-h1: clamp(1.0625rem, 0.85vw + 0.86rem, 1.375rem);
+  --jkd-text-h2: clamp(0.95rem, 0.45vw + 0.82rem, 1.125rem);
+  --jkd-text-subtitle: clamp(0.8125rem, 0.18vw + 0.77rem, 0.875rem);
+  --jkd-text-body: clamp(0.875rem, 0.2vw + 0.82rem, 0.9375rem);
+  --jkd-text-sm: clamp(0.8rem, 0.15vw + 0.76rem, 0.85rem);
+  --jkd-text-xs: clamp(0.75rem, 0.12vw + 0.71rem, 0.78rem);
 }
 
 @layer components {
@@ -31,6 +32,7 @@
 
   html, body {
     font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: var(--jkd-text-body);
     background-color: var(--jkd-canvas);
     color: var(--jkd-navy);
     line-height: 1.65;
@@ -44,7 +46,8 @@
   /* Thai Script Headroom: Prevent clipping of upper vowels & tone marks (ิ ี ึ ื ่ ้ ๊ ๋ ์) */
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', sans-serif;
-    line-height: 1.48;
+    line-height: 1.44;
+    letter-spacing: -0.01em;
     text-wrap: balance;
     padding-block: 0.04em;
   }
@@ -58,7 +61,7 @@
   }
 
   h3 {
-    font-size: 0.975rem;
+    font-size: 1rem;
   }
 
   h4 {
@@ -66,7 +69,7 @@
   }
 
   p, li, td, th, label, span {
-    line-height: 1.62;
+    line-height: 1.6;
   }
 
   p {
@@ -81,23 +84,38 @@
 /* Thai Phrase & Sentence Discipline Utilities */
 .thai-prose {
   font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', sans-serif;
-  line-height: 1.72;
+  line-height: 1.68;
   word-break: normal;
   overflow-wrap: break-word;
   line-break: auto;
   text-wrap: pretty;
 }
 
+.thai-subtitle {
+  font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', sans-serif;
+  font-size: var(--jkd-text-subtitle);
+  line-height: 1.65;
+  color: #64748b;
+  word-break: normal;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
 .thai-phrase {
   display: inline-block;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .thai-heading {
   font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', sans-serif;
-  line-height: 1.48;
+  line-height: 1.44;
   padding-top: 2px;
   padding-bottom: 2px;
+  word-break: normal;
+  overflow-wrap: break-word;
   text-wrap: balance;
 }
 
@@ -108,7 +126,7 @@
 }
 
 .font-mono-num {
-  font-family: 'IBM Plex Mono', 'Noto Sans Thai', 'IBM Plex Sans Thai', monospace;
+  font-family: 'IBM Plex Mono', 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', monospace;
   font-variant-numeric: tabular-nums;
 }
 
@@ -154,10 +172,66 @@
   transition: transform 180ms var(--ease-figma), box-shadow 180ms var(--ease-figma), border-color 180ms var(--ease-figma);
 }
 
+html[data-graphics="on"] .figma-card {
+  box-shadow: 0 4px 20px -8px rgba(15, 23, 42, 0.06);
+}
+
 .figma-card-interactive:hover {
   transform: translateY(-2px);
   border-color: #cbd5e1;
   box-shadow: 0 10px 24px -10px rgba(15, 23, 42, 0.08);
+}
+
+html[data-graphics="on"] .figma-card-interactive:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 14px 30px -12px rgba(79, 70, 229, 0.14);
+}
+
+/* Switchable Architectural Dot Grid & Subtle Compositor-Only Graphics */
+.jkd-dot-grid {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.16) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@keyframes jkdAmbientPulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes jkdFloatSlow {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0);
+  }
+  50% {
+    transform: translate3d(10px, -12px, 0);
+  }
+}
+
+@keyframes jkdFloatSlowReverse {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0);
+  }
+  50% {
+    transform: translate3d(-12px, 10px, 0);
+  }
+}
+
+.jkd-ambient-pulse {
+  animation: jkdAmbientPulse 5s ease-in-out infinite;
+}
+
+.jkd-float-slow {
+  animation: jkdFloatSlow 12s ease-in-out infinite;
+}
+
+.jkd-float-slow-reverse {
+  animation: jkdFloatSlowReverse 14s ease-in-out infinite;
 }
 
 .figma-btn {
@@ -367,6 +441,9 @@
   .animate-figma-modal,
   .animate-friendly-icon,
   .animate-friendly-badge,
+  .jkd-ambient-pulse,
+  .jkd-float-slow,
+  .jkd-float-slow-reverse,
   .figma-card,
   .figma-btn {
     animation: none !important;

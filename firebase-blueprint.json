@@ -55,6 +55,7 @@
         "dbdObjective": { "type": "string", "maxLength": 300 },
         "lastDbdSyncAt": { "type": "string", "maxLength": 60 },
         "lastChangeSummary": { "type": "string", "maxLength": 500 },
+        "showGraphics": { "type": "boolean" },
         "updatedBy": { "type": "string", "maxLength": 128 },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

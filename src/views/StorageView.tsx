@@ -63,6 +63,7 @@ import {
   toastSuccess,
 } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
+import { ThaiText } from '../components/ThaiText';
 
 interface StorageViewProps {
   documents: AccountingDocument[];
@@ -586,12 +587,10 @@ export const StorageView: React.FC<StorageViewProps> = ({
       <div className="flex flex-col items-center text-center gap-2.5 sm:gap-3 pb-1">
         <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks('บริหารจัดการคลังข้อมูลและรูปภาพเก่า')}
+            <ThaiText text="คลังข้อมูลและบริหารพื้นที่จัดเก็บ" />
           </h1>
-          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
-            {formatThaiLineBreaks(
-              'วิเคราะห์ปริมาณพื้นที่จัดเก็บจริง บีบอัดรูปใบเสร็จเก่า และสำรองล้างข้อมูลที่ไม่จำเป็นเพื่อประหยัดพื้นที่'
-            )}
+          <p className="thai-subtitle mt-1.5 mb-0">
+            <ThaiText text="วิเคราะห์พื้นที่ใช้งานจริง บีบอัดรูปใบเสร็จเก่า และสำรองล้างข้อมูลที่ไม่จำเป็นเพื่อประหยัดพื้นที่" />
           </p>
         </div>
 

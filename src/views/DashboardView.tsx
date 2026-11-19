@@ -14,6 +14,7 @@ import { AccountingDocument, Expense, Project } from '../types/accounting';
 import { exportMonthlyBudgetExcel, formatTHB, getMonthYearFromDate } from '../utils/formatters';
 import { toastSuccess } from '../utils/swal';
 import { formatThaiLineBreaks } from '../utils/thaiText';
+import { ThaiText } from '../components/ThaiText';
 
 interface DashboardViewProps {
   documents: AccountingDocument[];
@@ -169,12 +170,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="flex flex-col items-center text-center gap-3 pb-1">
         <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks('ภาพรวมงบประมาณและภาษีรายเดือน')}
+            <ThaiText text="งบประมาณและภาษีรายเดือน" />
           </h1>
-          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
-            {formatThaiLineBreaks(
-              'สรุปรายรับ รายจ่าย กำไรสุทธิ ภาษีมูลค่าเพิ่ม (VAT ซื้อ-ขาย) และภาษีหัก ณ ที่จ่าย ของบริษัท'
-            )}
+          <p className="thai-subtitle mt-1.5 mb-0">
+            <ThaiText text="สรุปรายรับ รายจ่าย กำไรสุทธิ ภาษีมูลค่าเพิ่ม (VAT ซื้อ-ขาย) และภาษีหัก ณ ที่จ่าย ของบริษัท" />
           </p>
         </div>
 

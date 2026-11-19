@@ -69,6 +69,7 @@ import {
   MultiPageScanResult,
 } from '../components/MultiPageScannerModal';
 import { ThaiDatePickerField } from '../components/ThaiDatePickerField';
+import { ThaiText } from '../components/ThaiText';
 import { sendEmergencyCashLineAlert } from '../utils/lineClient';
 import {
   checkOverheadReadiness,
@@ -574,12 +575,10 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
       <div className="flex flex-col items-center text-center gap-3 pb-1">
         <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
-            {formatThaiLineBreaks('บันทึกรายจ่ายโปรเจกต์และออกหนังสือรับรอง 50 ทวิ')}
+            <ThaiText text="บันทึกรายจ่ายและออก 50 ทวิ" />
           </h1>
-          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
-            {formatThaiLineBreaks(
-              'บันทึกรายจ่ายผูกกับ Event พร้อมสแกนดึงข้อมูลจากรูปใบเสร็จอัตโนมัติ และออก 50 ทวิให้ซัพพลายเยอร์'
-            )}
+          <p className="thai-subtitle mt-1.5 mb-0">
+            <ThaiText text="บันทึกรายจ่ายผูกโปรเจกต์หรือค่าใช้จ่ายบริษัท พร้อมสแกนใบเสร็จอัตโนมัติและออกหนังสือรับรอง 50 ทวิ" />
           </p>
         </div>
 

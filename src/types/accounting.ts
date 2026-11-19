@@ -37,6 +37,7 @@ export interface CompanyProfile {
   dbdObjective?: string;
   lastDbdSyncAt?: string;
   lastChangeSummary?: string;
+  showGraphics?: boolean;
   updatedBy?: string;
   updatedAt?: Timestamp;
 }
@@ -66,6 +67,7 @@ export const DEFAULT_COMPANY_PROFILE: CompanyProfile = {
   registeredCapital: 1000000,
   dbdStatus: 'ยังดำเนินกิจการอยู่',
   dbdObjective: 'กิจกรรมของบริษัทโฆษณา',
+  showGraphics: true,
 };
 
 export const COMPANY_BILLING_HEADER_TEXT =
