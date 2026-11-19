@@ -8,6 +8,7 @@ import {
   ExternalLink,
   FileText,
   HelpCircle,
+  History,
   Mail,
   MessageCircle,
   Phone,
@@ -15,6 +16,7 @@ import {
   Upload,
   UserCheck,
   Users,
+  X,
 } from 'lucide-react';
 import { compressImageFileToLimit, db } from '../firebase';
 import {
@@ -25,7 +27,14 @@ import {
   UrgentExpenseRequest,
   clampString,
 } from '../types/accounting';
-import { formatTHB, getTodayISO, sanitizeDecimalInput } from '../utils/formatters';
+import {
+  calculateExpenseAmounts,
+  formatShortDate,
+  formatTHB,
+  getDaysInMonth,
+  getTodayISO,
+  sanitizeDecimalInput,
+} from '../utils/formatters';
 import {
   ClientLineNotifyResult,
   sendPublicUrgentLineAlert,
@@ -46,6 +55,35 @@ function buildPublicVoucherNo(): string {
 }
 
 const SUBMITTER_STORAGE_KEY = 'jkd_urgent_submitter_profile_v1';
+const FORM_MEMORY_STORAGE_KEY = 'jkd_urgent_form_memory_v1';
+
+const THAI_SHORT_MONTHS = [
+  'ม.ค.',
+  'ก.พ.',
+  'มี.ค.',
+  'เม.ย.',
+  'พ.ค.',
+  'มิ.ย.',
+  'ก.ค.',
+  'ส.ค.',
+  'ก.ย.',
+  'ต.ค.',
+  'พ.ย.',
+  'ธ.ค.',
+];
+
+const DEFAULT_PROJECT_PRESETS = [
+  'กิจกรรมสำนักงาน',
+  'งานอีเวนต์หน้างาน',
+  'งานถ่ายทำ / โปรดักชัน',
+];
+
+const DEFAULT_DESCRIPTION_PRESETS = [
+  'ค่าชาร์จไฟฟ้ารถยนต์เดินทาง',
+  'ค่าน้ำมัน / ค่าทางด่วน',
+  'ค่าอาหารและเครื่องดื่มทีมงาน',
+  'ค่าอุปกรณ์หน้างาน',
+];
 
 interface SavedSubmitterProfile {
   payerType: EmergencyPayerType;
@@ -53,6 +91,14 @@ interface SavedSubmitterProfile {
   submitterPhone: string;
   submitterLineId: string;
   submitterEmail: string;
+}
+
+interface SavedUrgentFormMemory {
+  lastProjectName: string;
+  lastDescription: string;
+  lastVendorName: string;
+  recentProjects: string[];
+  recentDescriptions: string[];
 }
 
 function loadSavedSubmitterProfile(): SavedSubmitterProfile | null {
@@ -71,6 +117,48 @@ function loadSavedSubmitterProfile(): SavedSubmitterProfile | null {
   } catch {
     return null;
   }
+}
+
+function loadUrgentFormMemory(): SavedUrgentFormMemory {
+  const empty: SavedUrgentFormMemory = {
+    lastProjectName: '',
+    lastDescription: '',
+    lastVendorName: '',
+    recentProjects: [],
+    recentDescriptions: [],
+  };
+  if (typeof window === 'undefined') return empty;
+  try {
+    const raw = window.localStorage.getItem(FORM_MEMORY_STORAGE_KEY);
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw) as Partial<SavedUrgentFormMemory>;
+    return {
+      lastProjectName: typeof parsed.lastProjectName === 'string' ? parsed.lastProjectName : '',
+      lastDescription: typeof parsed.lastDescription === 'string' ? parsed.lastDescription : '',
+      lastVendorName: typeof parsed.lastVendorName === 'string' ? parsed.lastVendorName : '',
+      recentProjects: Array.isArray(parsed.recentProjects)
+        ? parsed.recentProjects.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).slice(0, 6)
+        : [],
+      recentDescriptions: Array.isArray(parsed.recentDescriptions)
+        ? parsed.recentDescriptions.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).slice(0, 6)
+        : [],
+    };
+  } catch {
+    return empty;
+  }
+}
+
+function mergeUniqueStrings(primary: string[], fallback: string[], limit = 6): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of [...primary, ...fallback]) {
+    const clean = item.trim();
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    out.push(clean);
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = ({
@@ -98,6 +186,8 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
   );
   const [showLineIdGuide, setShowLineIdGuide] = useState(false);
 
+  const [formMemory, setFormMemory] = useState<SavedUrgentFormMemory>(() => loadUrgentFormMemory());
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
@@ -110,16 +200,18 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [projectName, setProjectName] = useState('');
-  const [vendorName, setVendorName] = useState('');
+  const [projectName, setProjectName] = useState(() => loadUrgentFormMemory().lastProjectName);
+  const [vendorName, setVendorName] = useState(() => loadUrgentFormMemory().lastVendorName);
   const [vendorTaxId, setVendorTaxId] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(() => loadUrgentFormMemory().lastDescription);
   const [urgencyReason, setUrgencyReason] = useState('');
   const [paymentDate, setPaymentDate] = useState(getTodayISO());
-  const [amount, setAmount] = useState<number>(0);
+  const [amountMode, setAmountMode] = useState<'before_vat' | 'gross_total'>('gross_total');
+  const [rawAmountValue, setRawAmountValue] = useState<number>(0);
   const [amountInput, setAmountInput] = useState<string>('');
   const [vatRate, setVatRate] = useState<number>(0);
   const [whtRate, setWhtRate] = useState<number>(0);
+  const [grossIncludesWhtDeduction, setGrossIncludesWhtDeduction] = useState<boolean>(false);
 
   const [receiptUrl, setReceiptUrl] = useState('');
   const [extraPhotoUrl, setExtraPhotoUrl] = useState('');
@@ -132,9 +224,51 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
   } | null>(null);
   const [copiedMsg, setCopiedMsg] = useState(false);
 
-  const vatAmount = Number(((amount * vatRate) / 100).toFixed(2));
-  const whtAmount = Number(((amount * whtRate) / 100).toFixed(2));
-  const netPaid = Number((amount + vatAmount - whtAmount).toFixed(2));
+  const taxBreakdown = calculateExpenseAmounts({
+    mode: amountMode,
+    inputAmount: rawAmountValue,
+    vatRate,
+    whtRate,
+    grossIncludesWhtDeduction,
+  });
+  const amount = taxBreakdown.amountBeforeVat;
+  const vatAmount = taxBreakdown.vatAmount;
+  const whtAmount = taxBreakdown.whtAmount;
+  const netPaid = taxBreakdown.netPaid;
+
+  const projectSuggestions = mergeUniqueStrings(
+    formMemory.recentProjects,
+    DEFAULT_PROJECT_PRESETS,
+    6
+  );
+  const descriptionSuggestions = mergeUniqueStrings(
+    formMemory.recentDescriptions,
+    DEFAULT_DESCRIPTION_PRESETS,
+    6
+  );
+
+  const parsedDateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(paymentDate);
+  const selectedYear = parsedDateMatch ? Number(parsedDateMatch[1]) : new Date().getFullYear();
+  const selectedMonth = parsedDateMatch ? Number(parsedDateMatch[2]) : new Date().getMonth() + 1;
+  const selectedDay = parsedDateMatch ? Number(parsedDateMatch[3]) : new Date().getDate();
+  const daysInSelectedMonth = getDaysInMonth(selectedYear, selectedMonth);
+  const currentYear = new Date().getFullYear();
+  const yearOptions = [
+    currentYear - 2,
+    currentYear - 1,
+    currentYear,
+    currentYear + 1,
+    currentYear + 2,
+  ];
+
+  const updatePaymentDateParts = (nextYear: number, nextMonth: number, nextDay: number) => {
+    const maxDay = getDaysInMonth(nextYear, nextMonth);
+    const clampedDay = Math.min(Math.max(1, nextDay), maxDay);
+    const yyyy = String(nextYear).padStart(4, '0');
+    const mm = String(nextMonth).padStart(2, '0');
+    const dd = String(clampedDay).padStart(2, '0');
+    setPaymentDate(`${yyyy}-${mm}-${dd}`);
+  };
 
   const handleImagePick = async (
     target: 'receipt' | 'extra',
@@ -167,16 +301,17 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
 
   const resetForm = () => {
     setSubmittedReceipt(null);
-    setProjectName('');
-    setVendorName('');
+    setProjectName(formMemory.lastProjectName || '');
+    setVendorName(formMemory.lastVendorName || '');
     setVendorTaxId('');
-    setDescription('');
+    setDescription(formMemory.lastDescription || '');
     setUrgencyReason('');
     setPaymentDate(getTodayISO());
-    setAmount(0);
+    setRawAmountValue(0);
     setAmountInput('');
     setVatRate(0);
     setWhtRate(0);
+    setGrossIncludesWhtDeduction(false);
     setReceiptUrl('');
     setExtraPhotoUrl('');
     setProcessingTarget(null);
@@ -279,6 +414,16 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
           })
         );
         setHasSavedProfile(true);
+
+        const nextMemory: SavedUrgentFormMemory = {
+          lastProjectName: cleanProject,
+          lastDescription: cleanDesc,
+          lastVendorName: clampString(vendorName, FIELD_LIMITS.companyName),
+          recentProjects: mergeUniqueStrings([cleanProject], formMemory.recentProjects, 6),
+          recentDescriptions: mergeUniqueStrings([cleanDesc], formMemory.recentDescriptions, 6),
+        };
+        window.localStorage.setItem(FORM_MEMORY_STORAGE_KEY, JSON.stringify(nextMemory));
+        setFormMemory(nextMemory);
       } catch {
         // ignore storage errors
       }
@@ -752,36 +897,135 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
 
             <div className="row g-3">
               <div className="col-md-7">
-                <label className="form-label">ชื่องาน / โปรเจกต์ / Event *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  required
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="เช่น งานอีเวนต์เปิดตัวสินค้า / ถ่ายทำโฆษณา"
-                />
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <label className="form-label m-0">ชื่องาน / โปรเจกต์ / Event *</label>
+                  {formMemory.lastProjectName && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-teal-700 font-medium">
+                      <History className="w-3 h-3" />
+                      จำค่าล่าสุดแล้ว
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="form-control pr-9"
+                    required
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    placeholder="เช่น กิจกรรมสำนักงาน / งานอีเวนต์ / ถ่ายทำโฆษณา"
+                  />
+                  {projectName && (
+                    <button
+                      type="button"
+                      onClick={() => setProjectName('')}
+                      aria-label="ล้างชื่องาน"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 bg-transparent border-0 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {projectSuggestions.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setProjectName(item)}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer ${
+                        projectName.trim() === item
+                          ? 'bg-teal-700 text-white border-teal-700'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
               </div>
+
               <div className="col-md-5">
-                <label className="form-label">วันที่จ่ายเงินสด *</label>
-                <input
-                  type="date"
-                  className="form-control font-mono-num"
-                  required
-                  value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                />
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <label className="form-label m-0">วันที่จ่ายเงินสด (ว/ด/ป) *</label>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentDate(getTodayISO())}
+                    className="text-[11px] font-semibold text-teal-700 hover:text-teal-900 bg-teal-50 border border-teal-200 rounded-md px-2 py-0.5 cursor-pointer"
+                  >
+                    วันนี้
+                  </button>
+                </div>
+                <div className="grid grid-cols-[0.9fr_1.3fr_1.2fr] gap-1.5">
+                  <select
+                    aria-label="วัน"
+                    className="form-select font-mono-num px-2 text-sm"
+                    value={selectedDay}
+                    onChange={(e) =>
+                      updatePaymentDateParts(selectedYear, selectedMonth, Number(e.target.value))
+                    }
+                  >
+                    {Array.from({ length: daysInSelectedMonth }, (_, idx) => idx + 1).map((d) => (
+                      <option key={d} value={d}>
+                        {String(d).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="เดือน"
+                    className="form-select px-2 text-sm"
+                    value={selectedMonth}
+                    onChange={(e) =>
+                      updatePaymentDateParts(selectedYear, Number(e.target.value), selectedDay)
+                    }
+                  >
+                    {THAI_SHORT_MONTHS.map((label, idx) => (
+                      <option key={label} value={idx + 1}>
+                        {String(idx + 1).padStart(2, '0')} {label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="ปี"
+                    className="form-select font-mono-num px-2 text-sm"
+                    value={selectedYear}
+                    onChange={(e) =>
+                      updatePaymentDateParts(Number(e.target.value), selectedMonth, selectedDay)
+                    }
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y + 543}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1 font-mono-num">
+                  ว/ด/ป ที่เลือก: <strong className="text-slate-700">{formatShortDate(paymentDate)}</strong> (พ.ศ.{' '}
+                  {selectedYear + 543})
+                </div>
               </div>
 
               <div className="col-md-7">
                 <label className="form-label">ร้านค้า / ผู้รับเงินปลายทาง</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={vendorName}
-                  onChange={(e) => setVendorName(e.target.value)}
-                  placeholder="เช่น ร้านอุปกรณ์ไฟฟ้า / ปั๊มน้ำมัน / ค่าวิน"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="form-control pr-9"
+                    value={vendorName}
+                    onChange={(e) => setVendorName(e.target.value)}
+                    placeholder="เช่น ร้านอุปกรณ์ไฟฟ้า / ปั๊มน้ำมัน / ค่าวิน"
+                  />
+                  {vendorName && (
+                    <button
+                      type="button"
+                      onClick={() => setVendorName('')}
+                      aria-label="ล้างชื่อร้านค้า"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 bg-transparent border-0 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="col-md-5">
                 <label className="form-label">เลขผู้เสียภาษีร้านค้า (ถ้ามี)</label>
@@ -795,15 +1039,51 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
               </div>
 
               <div className="col-12">
-                <label className="form-label">รายละเอียดค่าใช้จ่าย *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  required
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="เช่น ซื้อปลั๊กพ่วง สายสัญญาณ HDMI ค่าเดินทางเร่งด่วน"
-                />
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <label className="form-label m-0">รายละเอียดค่าใช้จ่าย *</label>
+                  {formMemory.lastDescription && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-teal-700 font-medium">
+                      <History className="w-3 h-3" />
+                      จำค่าล่าสุดแล้ว
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="form-control pr-9"
+                    required
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="เช่น ค่าชาร์จไฟฟ้ารถยนต์เดินทาง / ซื้อปลั๊กพ่วง / ค่าวิน"
+                  />
+                  {description && (
+                    <button
+                      type="button"
+                      onClick={() => setDescription('')}
+                      aria-label="ล้างรายละเอียดค่าใช้จ่าย"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 bg-transparent border-0 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {descriptionSuggestions.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setDescription(item)}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer ${
+                        description.trim() === item
+                          ? 'bg-teal-700 text-white border-teal-700'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="col-12">
@@ -817,54 +1097,192 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                 />
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label">จำนวนเงิน (ก่อน VAT) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  required
-                  className="form-control font-mono-num fw-bold"
-                  placeholder="0.00"
-                  value={amountInput}
-                  onChange={(e) => {
-                    const { text, value } = sanitizeDecimalInput(e.target.value);
-                    setAmountInput(text);
-                    setAmount(value);
-                  }}
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">VAT (%)</label>
-                <select
-                  className="form-select font-mono-num"
-                  value={vatRate}
-                  onChange={(e) => setVatRate(Number(e.target.value))}
-                >
-                  <option value={0}>0% (ไม่มี VAT)</option>
-                  <option value={7}>7% (ภาษีมูลค่าเพิ่ม)</option>
-                </select>
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">หัก ณ ที่จ่าย (%)</label>
-                <select
-                  className="form-select font-mono-num"
-                  value={whtRate}
-                  onChange={(e) => setWhtRate(Number(e.target.value))}
-                >
-                  <option value={0}>0% (ไม่หัก)</option>
-                  <option value={1}>1% (ขนส่ง)</option>
-                  <option value={2}>2% (โฆษณา)</option>
-                  <option value={3}>3% (บริการ / จ้างทำของ)</option>
-                  <option value={5}>5% (เช่าทรัพย์สิน / นักแสดง)</option>
-                </select>
+              {/* Amount & Auto Tax Split Calculator */}
+              <div className="col-12">
+                <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="text-xs sm:text-sm font-bold text-slate-900">
+                      วิธีกรอกยอดเงินและการคำนวณภาษี
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-200/75">
+                      <button
+                        type="button"
+                        onClick={() => setAmountMode('gross_total')}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors border-0 cursor-pointer ${
+                          amountMode === 'gross_total'
+                            ? 'bg-teal-700 text-white shadow-xs'
+                            : 'bg-transparent text-slate-700 hover:text-slate-900'
+                        }`}
+                      >
+                        กรอกยอดราคาเต็ม (แยก VAT อัตโนมัติ)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAmountMode('before_vat')}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors border-0 cursor-pointer ${
+                          amountMode === 'before_vat'
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'bg-transparent text-slate-700 hover:text-slate-900'
+                        }`}
+                      >
+                        กรอกยอดก่อน VAT
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="form-label">
+                      {amountMode === 'gross_total'
+                        ? 'ยอดราคาจำนวนเต็มตามบิล / ที่จ่ายจริง (บาท) *'
+                        : 'จำนวนเงิน (ก่อน VAT) *'}
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      required
+                      className="form-control font-mono-num fw-bold text-base"
+                      placeholder="0.00"
+                      value={amountInput}
+                      onChange={(e) => {
+                        const { text, value } = sanitizeDecimalInput(e.target.value);
+                        setAmountInput(text);
+                        setRawAmountValue(value);
+                      }}
+                    />
+                  </div>
+
+                  {amountMode === 'gross_total' ? (
+                    <div className="space-y-2.5 pt-1">
+                      <div className="text-xs font-semibold text-slate-700">
+                        ติ๊กเลือกรายการภาษีเพื่อคำนวณแยกจากยอดเต็ม:
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+                          <input
+                            type="checkbox"
+                            className="form-check-input mt-0.5 shrink-0"
+                            checked={vatRate === 7}
+                            onChange={(e) => setVatRate(e.target.checked ? 7 : 0)}
+                          />
+                          <div className="text-xs leading-snug">
+                            <div className="font-bold text-slate-900">รวม VAT 7% แล้ว</div>
+                            <div className="text-slate-500">
+                              ระบบจะถอด VAT 7% ออกจากยอดเต็มอัตโนมัติ (÷ 1.07)
+                            </div>
+                          </div>
+                        </label>
+
+                        <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+                          <input
+                            type="checkbox"
+                            className="form-check-input mt-0.5 shrink-0"
+                            checked={whtRate > 0}
+                            onChange={(e) => setWhtRate(e.target.checked ? 3 : 0)}
+                          />
+                          <div className="text-xs leading-snug">
+                            <div className="font-bold text-slate-900">มีหัก ณ ที่จ่าย (WHT)</div>
+                            <div className="text-slate-500">
+                              ติ๊กเพื่อเลือกอัตราหัก ณ ที่จ่าย (1% / 2% / 3% / 5%)
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+
+                      {whtRate > 0 && (
+                        <div className="p-3 rounded-lg bg-white border border-teal-200 space-y-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-xs font-semibold text-slate-700 mr-1">
+                              อัตราหัก ณ ที่จ่าย:
+                            </span>
+                            {[
+                              { rate: 1, label: '1% ขนส่ง' },
+                              { rate: 2, label: '2% โฆษณา' },
+                              { rate: 3, label: '3% บริการ' },
+                              { rate: 5, label: '5% เช่า/นักแสดง' },
+                            ].map((opt) => (
+                              <button
+                                key={opt.rate}
+                                type="button"
+                                onClick={() => setWhtRate(opt.rate)}
+                                className={`px-2.5 py-1 rounded-md border text-xs font-semibold cursor-pointer ${
+                                  whtRate === opt.rate
+                                    ? 'bg-teal-700 text-white border-teal-700'
+                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          <label className="flex items-start gap-2 pt-1 border-t border-slate-100 cursor-pointer text-xs">
+                            <input
+                              type="checkbox"
+                              className="form-check-input mt-0.5 shrink-0"
+                              checked={grossIncludesWhtDeduction}
+                              onChange={(e) => setGrossIncludesWhtDeduction(e.target.checked)}
+                            />
+                            <span className="text-slate-700 leading-snug">
+                              <strong>ยอดเต็มที่กรอกเป็นยอดจ่ายสุทธิหลังหักภาษีแล้ว</strong>{' '}
+                              <span className="text-slate-500">
+                                (เช่น จ่ายสดให้ผู้รับ 970 บาทหลังหัก 3% ระบบจะย้อนหาฐาน 1,000 บาทให้)
+                              </span>
+                            </span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="row g-2 pt-1">
+                      <div className="col-sm-6">
+                        <label className="form-label">VAT (%)</label>
+                        <select
+                          className="form-select font-mono-num"
+                          value={vatRate}
+                          onChange={(e) => setVatRate(Number(e.target.value))}
+                        >
+                          <option value={0}>0% (ไม่มี VAT)</option>
+                          <option value={7}>7% (ภาษีมูลค่าเพิ่ม)</option>
+                        </select>
+                      </div>
+                      <div className="col-sm-6">
+                        <label className="form-label">หัก ณ ที่จ่าย (%)</label>
+                        <select
+                          className="form-select font-mono-num"
+                          value={whtRate}
+                          onChange={(e) => setWhtRate(Number(e.target.value))}
+                        >
+                          <option value={0}>0% (ไม่หัก)</option>
+                          <option value={1}>1% (ขนส่ง)</option>
+                          <option value={2}>2% (โฆษณา)</option>
+                          <option value={3}>3% (บริการ / จ้างทำของ)</option>
+                          <option value={5}>5% (เช่าทรัพย์สิน / นักแสดง)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 flex flex-wrap justify-between items-center gap-2 text-xs sm:text-sm font-mono-num">
-              <span>VAT ฿{formatTHB(vatAmount)} · หัก ณ ที่จ่าย -฿{formatTHB(whtAmount)}</span>
-              <strong className="text-teal-900 text-base">
-                ยอดเบิกคืนสุทธิ: ฿{formatTHB(netPaid)}
-              </strong>
+            <div className="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 space-y-1.5 text-xs sm:text-sm font-mono-num">
+              <div className="flex flex-wrap justify-between gap-2 text-slate-700">
+                <span>จำนวนเงินก่อน VAT (ฐานภาษี):</span>
+                <strong>฿{formatTHB(amount)}</strong>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2 text-slate-700">
+                <span>VAT {vatRate}% · หัก ณ ที่จ่าย {whtRate}%:</span>
+                <span>
+                  +฿{formatTHB(vatAmount)} / -฿{formatTHB(whtAmount)}
+                </span>
+              </div>
+              <div className="pt-1.5 border-t border-teal-200/80 flex flex-wrap justify-between items-center gap-2">
+                <span className="font-sans font-semibold text-teal-900">ยอดเบิกคืนสุทธิ:</span>
+                <strong className="text-teal-900 text-base">
+                  ฿{formatTHB(netPaid)}
+                </strong>
+              </div>
             </div>
           </div>
 

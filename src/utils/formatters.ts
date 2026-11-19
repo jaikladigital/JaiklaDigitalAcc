@@ -32,6 +32,68 @@ export function sanitizeDecimalInput(raw: string): { text: string; value: number
   };
 }
 
+export interface TaxSplitInput {
+  mode: 'before_vat' | 'gross_total';
+  inputAmount: number;
+  vatRate: number;
+  whtRate: number;
+  grossIncludesWhtDeduction?: boolean;
+}
+
+export interface TaxSplitResult {
+  amountBeforeVat: number;
+  vatAmount: number;
+  whtAmount: number;
+  netPaid: number;
+}
+
+export function calculateExpenseAmounts(input: TaxSplitInput): TaxSplitResult {
+  const safeInput = Number.isFinite(input.inputAmount) ? Math.max(0, input.inputAmount) : 0;
+  const safeVatRate = Number.isFinite(input.vatRate) ? Math.max(0, input.vatRate) : 0;
+  const safeWhtRate = Number.isFinite(input.whtRate) ? Math.max(0, input.whtRate) : 0;
+
+  if (safeInput <= 0) {
+    return { amountBeforeVat: 0, vatAmount: 0, whtAmount: 0, netPaid: 0 };
+  }
+
+  if (input.mode === 'before_vat') {
+    const amountBeforeVat = Number(safeInput.toFixed(2));
+    const vatAmount = Number(((amountBeforeVat * safeVatRate) / 100).toFixed(2));
+    const whtAmount = Number(((amountBeforeVat * safeWhtRate) / 100).toFixed(2));
+    const netPaid = Number((amountBeforeVat + vatAmount - whtAmount).toFixed(2));
+    return { amountBeforeVat, vatAmount, whtAmount, netPaid };
+  }
+
+  // mode === 'gross_total': user entered full/total bill amount
+  if (input.grossIncludesWhtDeduction && safeWhtRate > 0) {
+    // User entered net cash paid after +VAT and -WHT:
+    // netPaid = base * (1 + vatRate/100 - whtRate/100)
+    const factor = 1 + safeVatRate / 100 - safeWhtRate / 100;
+    const amountBeforeVat =
+      factor > 0 ? Number((safeInput / factor).toFixed(2)) : Number(safeInput.toFixed(2));
+    const vatAmount = Number(((amountBeforeVat * safeVatRate) / 100).toFixed(2));
+    const whtAmount = Number(
+      Math.max(0, amountBeforeVat + vatAmount - safeInput).toFixed(2)
+    );
+    const netPaid = Number(safeInput.toFixed(2));
+    return { amountBeforeVat, vatAmount, whtAmount, netPaid };
+  }
+
+  // Standard receipt/invoice total (Base + VAT):
+  // total = base * (1 + vatRate/100)
+  const vatFactor = 1 + safeVatRate / 100;
+  const amountBeforeVat = Number((safeInput / vatFactor).toFixed(2));
+  const vatAmount =
+    safeVatRate > 0 ? Number(Math.max(0, safeInput - amountBeforeVat).toFixed(2)) : 0;
+  const whtAmount = Number(((amountBeforeVat * safeWhtRate) / 100).toFixed(2));
+  const netPaid = Number((amountBeforeVat + vatAmount - whtAmount).toFixed(2));
+  return { amountBeforeVat, vatAmount, whtAmount, netPaid };
+}
+
+export function getDaysInMonth(year: number, month1to12: number): number {
+  return new Date(year, month1to12, 0).getDate();
+}
+
 export function formatThaiDate(dateStr?: string): string {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
