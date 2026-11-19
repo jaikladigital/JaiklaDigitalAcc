@@ -84,6 +84,12 @@ export const ThaiDatePickerField: React.FC<ThaiDatePickerFieldProps> = ({
     );
   };
 
+  const dayDisplayText = parsed ? String(effectiveDay).padStart(2, '0') : 'วัน';
+  const monthDisplayText = parsed
+    ? `${String(parsed.month).padStart(2, '0')} ${THAI_SHORT_MONTHS[parsed.month - 1]}`
+    : 'เดือน';
+  const yearDisplayText = parsed ? String(parsed.year + 543) : 'พ.ศ.';
+
   return (
     <div className={className}>
       {(label || showTodayButton || (allowEmpty && Boolean(value))) && (
@@ -123,19 +129,29 @@ export const ThaiDatePickerField: React.FC<ThaiDatePickerFieldProps> = ({
         </div>
       )}
 
-      {/* Segmented Thai Date Control (Day | Month | Year BE) - No Bootstrap .form-select clipping */}
+      {/* Segmented Thai Date Control: visual HTML label + full-area native select overlay (prevents mobile Chrome select clipping & matches app typography) */}
       <div
-        className={`flex items-stretch w-full min-h-[42px] sm:min-h-[38px] rounded-lg border transition-colors overflow-hidden ${
+        className={`flex items-stretch w-full min-h-[40px] sm:min-h-[38px] rounded-lg border transition-colors overflow-hidden ${
           highlighted
             ? 'border-amber-400 bg-amber-50/50 focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-500/20'
             : 'border-slate-300 bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/15'
         }`}
       >
         {/* Day */}
-        <div className="relative flex-[0.82] min-w-[60px]">
+        <div className="relative flex-[0.82] min-w-[54px] flex items-center justify-center px-2 py-1.5 hover:bg-slate-50/80 transition-colors">
+          <div className="pointer-events-none flex items-center justify-center gap-1 w-full">
+            <span
+              className={`tabular-nums text-[13.5px] sm:text-sm font-medium leading-none whitespace-nowrap ${
+                parsed ? 'text-slate-900' : 'text-slate-400'
+              }`}
+            >
+              {dayDisplayText}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          </div>
           <select
             aria-label="วัน"
-            className="w-full h-full appearance-none bg-transparent border-0 ps-2 pe-5 py-1.5 text-center font-mono-num text-base sm:text-sm font-semibold text-slate-900 focus:outline-none cursor-pointer"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
             value={parsed ? effectiveDay : ''}
             onChange={(e) => {
               const val = Number(e.target.value);
@@ -150,16 +166,25 @@ export const ThaiDatePickerField: React.FC<ThaiDatePickerFieldProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" />
         </div>
 
         <div className="w-px bg-slate-200 my-1.5 shrink-0" />
 
         {/* Month */}
-        <div className="relative flex-[1.35] min-w-[92px]">
+        <div className="relative flex-[1.32] min-w-[88px] flex items-center justify-center px-2 py-1.5 hover:bg-slate-50/80 transition-colors">
+          <div className="pointer-events-none flex items-center justify-center gap-1 w-full">
+            <span
+              className={`tabular-nums text-[13.5px] sm:text-sm font-medium leading-none whitespace-nowrap ${
+                parsed ? 'text-slate-900' : 'text-slate-400'
+              }`}
+            >
+              {monthDisplayText}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          </div>
           <select
             aria-label="เดือน"
-            className="w-full h-full appearance-none bg-transparent border-0 ps-2.5 pe-5 py-1.5 text-base sm:text-sm font-medium text-slate-900 focus:outline-none cursor-pointer"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
             value={parsed ? parsed.month : ''}
             onChange={(e) => {
               const val = Number(e.target.value);
@@ -174,16 +199,25 @@ export const ThaiDatePickerField: React.FC<ThaiDatePickerFieldProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" />
         </div>
 
         <div className="w-px bg-slate-200 my-1.5 shrink-0" />
 
         {/* Year (พ.ศ.) */}
-        <div className="relative flex-[1.05] min-w-[74px]">
+        <div className="relative flex-[1.05] min-w-[70px] flex items-center justify-center px-2 py-1.5 hover:bg-slate-50/80 transition-colors">
+          <div className="pointer-events-none flex items-center justify-center gap-1 w-full">
+            <span
+              className={`tabular-nums text-[13.5px] sm:text-sm font-medium leading-none whitespace-nowrap ${
+                parsed ? 'text-slate-900' : 'text-slate-400'
+              }`}
+            >
+              {yearDisplayText}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          </div>
           <select
             aria-label="ปี พ.ศ."
-            className="w-full h-full appearance-none bg-transparent border-0 ps-2 pe-5 py-1.5 text-center font-mono-num text-base sm:text-sm font-semibold text-slate-900 focus:outline-none cursor-pointer"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
             value={parsed ? parsed.year : ''}
             onChange={(e) => {
               const val = Number(e.target.value);
@@ -198,15 +232,14 @@ export const ThaiDatePickerField: React.FC<ThaiDatePickerFieldProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" />
         </div>
       </div>
 
       {!hideCaption && (
-        <div className="mt-1 text-[11px] text-slate-500 font-mono-num">
+        <div className="mt-1 text-[11.5px] text-slate-500 tabular-nums leading-snug">
           {parsed ? (
             <>
-              ว/ด/ป: <strong className="text-slate-700">{formatShortDate(value)}</strong> (พ.ศ.{' '}
+              ว/ด/ป: <strong className="text-slate-700 font-semibold">{formatShortDate(value)}</strong> (พ.ศ.{' '}
               {parsed.year + 543})
             </>
           ) : (
