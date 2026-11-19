@@ -338,25 +338,25 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
   const shortfallToBreakeven = Math.max(0, cur.breakEvenRevenue - cur.serviceRevenue);
 
   return (
-    <div className="space-y-6 animate-figma-in">
+    <div className="space-y-5 sm:space-y-6 animate-figma-in">
       {/* Header */}
-      <div className="flex flex-col items-center text-center gap-3 pb-1">
-        <div className="min-w-0 max-w-3xl">
+      <div className="flex flex-col items-center text-center gap-2.5 sm:gap-3 pb-1">
+        <div className="min-w-0 max-w-3xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
             {formatThaiLineBreaks(
-              'งบดุล งบการเงินประจำปี บทวิเคราะห์ และเอกสารยื่น DBD และกรมสรรพากร'
+              'งบดุล งบการเงินประจำปี บทวิเคราะห์ และเอกสารยื่น DBD / สรรพากร'
             )}
           </h1>
-          <p className="thai-prose text-sm text-slate-500 mt-1 mb-0">
+          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
             {formatThaiLineBreaks(
-              'จัดทำงบฐานะการเงิน งบกำไรขาดทุน งบเปลี่ยนแปลงส่วนของผู้ถือหุ้น หมายเหตุประกอบงบ 1–8 พร้อมบทวิเคราะห์อัตราส่วนทางการเงิน และความพร้อมยื่น ภ.ง.ด. 50 / ส.บช.3'
+              'จัดทำงบฐานะการเงิน งบกำไรขาดทุน งบเปลี่ยนแปลงส่วนของผู้ถือหุ้น หมายเหตุประกอบงบ 1–8 พร้อมบทวิเคราะห์และแบบยื่น ภ.ง.ด. 50 / ส.บช.3'
             )}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-2 w-full lg:w-auto">
           <select
-            className="form-select w-auto font-semibold text-sm"
+            className="form-select col-span-2 sm:col-span-1 w-full sm:w-auto font-semibold text-sm !rounded-xl min-h-[42px]"
             value={selectedYearBe}
             onChange={(e) => setSelectedYearBe(Number(e.target.value))}
           >
@@ -374,19 +374,19 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
           <button
             type="button"
             onClick={handleSyncFromLiveRecords}
-            className="figma-btn inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-300 !rounded-xl hover:bg-slate-50 min-h-[42px]"
           >
-            <RefreshCw className="w-4 h-4" />
-            ดึงยอดจากเอกสารในระบบ
+            <RefreshCw className="w-4 h-4 shrink-0" />
+            <span>ดึงยอดในระบบ</span>
           </button>
 
           {AUDITED_BASELINES_BY_YEAR[selectedYearBe] && (
             <button
               type="button"
               onClick={handleResetToAuditedBaseline}
-              className="figma-btn inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-blue-800 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100"
+              className="figma-btn inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-blue-800 bg-blue-50 border border-blue-200 !rounded-xl hover:bg-blue-100 min-h-[42px]"
             >
-              โหลดยอดปิดงบปี {selectedYearBe}
+              <span>ยอดปิดงบ {selectedYearBe}</span>
             </button>
           )}
 
@@ -394,46 +394,46 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
             type="button"
             disabled={saving}
             onClick={handleSaveLedger}
-            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-700 !rounded-xl hover:bg-emerald-800 min-h-[42px]"
           >
-            <Save className="w-4 h-4" />
-            {saving ? 'กำลังบันทึก...' : 'บันทึกงบปีนี้'}
+            <Save className="w-4 h-4 shrink-0" />
+            <span>{saving ? 'กำลังบันทึก...' : 'บันทึกงบปีนี้'}</span>
           </button>
 
           <button
             type="button"
             disabled={savingAllHistory}
             onClick={handleSaveAllHistoricalYears}
-            className="figma-btn inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300 rounded-lg hover:bg-emerald-200"
+            className="figma-btn col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300 !rounded-xl hover:bg-emerald-200 min-h-[42px]"
             title="บันทึกชุดข้อมูลงบการเงินตั้งแต่ปีก่อตั้ง 2562 ถึง 2568 ลงฐานข้อมูลครั้งเดียว"
           >
-            <Building2 className="w-4 h-4" />
-            {savingAllHistory ? 'กำลังบันทึก 7 ปี...' : 'อัพเดตฐานข้อมูล 2562–2568 ทั้งหมด'}
+            <Building2 className="w-4 h-4 shrink-0" />
+            <span>{savingAllHistory ? 'กำลังบันทึก 7 ปี...' : 'อัพเดตฐานข้อมูล 2562–2568'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowPrintModal(true)}
-            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-slate-900 !rounded-xl hover:bg-slate-800 min-h-[42px]"
           >
-            <Printer className="w-4 h-4" />
-            พิมพ์งบการเงิน A4
+            <Printer className="w-4 h-4 shrink-0" />
+            <span>พิมพ์งบ A4</span>
           </button>
 
           <button
             type="button"
             onClick={() => exportAnnualDbdPackageExcel(currentLedger, previousLedger, company)}
-            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 !rounded-xl hover:bg-emerald-100 min-h-[42px]"
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            Export Excel งบปี
+            <FileSpreadsheet className="w-4 h-4 shrink-0" />
+            <span>Export Excel</span>
           </button>
         </div>
       </div>
 
       {/* Balance Check & CPA Banner */}
       <div
-        className={`p-4 rounded-xl border flex flex-wrap items-center justify-between gap-3 ${
+        className={`p-3.5 sm:p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 ${
           cur.isBalanced
             ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
             : 'bg-rose-50 border-rose-300 text-rose-950'
@@ -445,30 +445,30 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
           ) : (
             <AlertTriangle className="w-5 h-5 text-rose-700 shrink-0 mt-0.5" />
           )}
-          <div>
-            <div className="font-bold">
+          <div className="min-w-0">
+            <div className="font-bold leading-[1.45]">
               {cur.isBalanced
                 ? `งบดุลสมดุลถูกต้อง (สินทรัพย์รวม ฿${formatTHB(cur.totalAssets)} = หนี้สิน + ส่วนของผู้ถือหุ้น ฿${formatTHB(cur.totalLiabilitiesAndEquity)})`
                 : `งบดุลยังไม่สมดุล ต่างอยู่ ฿${formatTHB(cur.balanceDiff)} — กรุณาปรับปรุงรายการเงินสด/ลูกหนี้/ค้างจ่ายในแท็บ "งบฐานะการเงิน"`}
             </div>
-            <div className="text-xs opacity-80 mt-0.5">
+            <div className="text-xs opacity-80 mt-0.5 leading-[1.5]">
               ผู้สอบบัญชีอ้างอิง: {currentLedger.cpaAuditorName || '-'} (CPA {currentLedger.cpaLicenseNo || '-'}) ·{' '}
               {currentLedger.cpaFirmName || '-'} · ทะเบียนนิติบุคคล {currentLedger.registrationNumber}
             </div>
           </div>
         </div>
-        <div className="text-xs font-mono-num font-bold">
+        <div className="text-xs font-mono-num font-bold shrink-0">
           {currentLedger.dataSourceMode === 'audited' ? 'โหมด: งบตรวจสอบแล้ว' : 'โหมด: ร่างจากข้อมูลสด'}
         </div>
       </div>
 
       {isAddressOutdatedFor2569Plus && (
-        <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-amber-950">
-          <div className="space-y-0.5">
+        <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-amber-950">
+          <div className="space-y-0.5 min-w-0">
             <div className="font-bold">
               พบที่ตั้งสำนักงานล่าสุดสำหรับงบปี {selectedYearBe} (หลังย้ายที่ตั้งสำนักงาน)
             </div>
-            <div className="text-xs text-amber-900">
+            <div className="text-xs text-amber-900 leading-[1.5]">
               ที่อยู่ในงบปีนี้ยังเป็น "{currentLedger.businessAddress}" → แนะนำเปลี่ยนเป็น "{latestExpectedAddress}"
             </div>
           </div>
@@ -476,7 +476,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
             type="button"
             disabled={saving}
             onClick={() => handleApplyLatestCompanyToYear(true)}
-            className="figma-btn inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-amber-700 hover:bg-amber-800 rounded-lg whitespace-nowrap"
+            className="figma-btn w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-amber-700 hover:bg-amber-800 !rounded-xl whitespace-nowrap min-h-[40px] shrink-0"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             อัพเดตที่อยู่ล่าสุดเข้าปี {selectedYearBe}
@@ -485,7 +485,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
       )}
 
       {/* 4 KPI Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="figma-card p-4">
           <div className="text-xs font-medium text-slate-500">สินทรัพย์รวม (Total Assets)</div>
           <div className="text-2xl font-bold font-mono-num text-slate-900 mt-1">
@@ -537,42 +537,42 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
       </div>
 
       {/* Sub-Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:inline-flex gap-1.5 p-1.5 sm:p-1 bg-slate-200/70 rounded-xl w-full lg:w-auto">
         <button
           type="button"
           onClick={() => setSubTab('analysis')}
-          className={`px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
+          className={`px-3.5 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors text-left sm:text-center min-h-[40px] ${
             subTab === 'analysis' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          1. บทวิเคราะห์ผู้บริหารและกราฟ
+          1. บทวิเคราะห์และกราฟ
         </button>
         <button
           type="button"
           onClick={() => setSubTab('statements')}
-          className={`px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
+          className={`px-3.5 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors text-left sm:text-center min-h-[40px] ${
             subTab === 'statements' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          2. งบฐานะการเงิน งบกำไรขาดทุน และงบผู้ถือหุ้น
+          2. งบฐานะการเงินและกำไรขาดทุน
         </button>
         <button
           type="button"
           onClick={() => setSubTab('notes')}
-          className={`px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
+          className={`px-3.5 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors text-left sm:text-center min-h-[40px] ${
             subTab === 'notes' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          3. หมายเหตุประกอบงบ (ข้อ 1–8)
+          3. หมายเหตุประกอบงบ (1–8)
         </button>
         <button
           type="button"
           onClick={() => setSubTab('filing')}
-          className={`px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
+          className={`px-3.5 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors text-left sm:text-center min-h-[40px] ${
             subTab === 'filing' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          4. ความพร้อมยื่น DBD และ ภ.ง.ด. 50 กรมสรรพากร
+          4. ความพร้อมยื่น DBD / ภ.ง.ด. 50
         </button>
       </div>
 
@@ -608,48 +608,48 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
             </div>
 
             {/* Key Ratios */}
-            <div className="lg:col-span-5 figma-card p-5 space-y-3">
-              <h2 className="text-base font-bold text-slate-900 m-0">
+            <div className="lg:col-span-5 figma-card p-4 sm:p-5 space-y-3">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 m-0">
                 อัตราส่วนทางการเงินที่สำคัญ (Financial Ratios)
               </h2>
               <div className="divide-y divide-slate-100 text-xs sm:text-sm">
-                <div className="py-2 flex justify-between items-center">
+                <div className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-2">
                   <span className="text-slate-600">อัตรากำไรขั้นต้น (Gross Margin)</span>
                   <strong className="font-mono-num text-slate-900">
                     {cur.grossMarginPct.toFixed(2)}% (฿{formatTHB(cur.grossProfit)})
                   </strong>
                 </div>
-                <div className="py-2 flex justify-between items-center">
+                <div className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-2">
                   <span className="text-slate-600">เงินทุนหมุนเวียนสุทธิ (Working Capital)</span>
                   <strong className="font-mono-num text-emerald-700">
                     ฿{formatTHB(cur.workingCapital)}
                   </strong>
                 </div>
-                <div className="py-2 flex justify-between items-center">
+                <div className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-2">
                   <span className="text-slate-600">อัตราส่วนสภาพคล่อง (Current Ratio)</span>
                   <strong className="font-mono-num text-blue-700">
                     {cur.currentRatio.toFixed(2)} เท่า
                   </strong>
                 </div>
-                <div className="py-2 flex justify-between items-center">
+                <div className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-2">
                   <span className="text-slate-600">อัตราส่วนหนี้สินต่อทุน (D/E Ratio)</span>
                   <strong className="font-mono-num text-slate-900">
                     {cur.debtToEquity.toFixed(3)} เท่า
                   </strong>
                 </div>
-                <div className="py-2 flex justify-between items-center">
+                <div className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-2">
                   <span className="text-slate-600">จุดคุ้มทุนรายได้บริการ (Break-Even Point)</span>
                   <strong className="font-mono-num text-slate-900">
                     ฿{formatTHB(cur.breakEvenRevenue)}
                   </strong>
                 </div>
-                <div className="py-2 flex justify-between items-center">
+                <div className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-2">
                   <span className="text-slate-600">สัดส่วนส่วนผู้ถือหุ้นต่อทุนจดทะเบียน</span>
                   <strong className="font-mono-num text-slate-900">
-                    {cur.capitalRemainingPct.toFixed(2)}% (เกณฑ์ปลอดภัย &gt; 50%)
+                    {cur.capitalRemainingPct.toFixed(2)}% (เกณฑ์ &gt; 50%)
                   </strong>
                 </div>
-                <div className="py-2 flex justify-between items-center">
+                <div className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5 sm:gap-2">
                   <span className="text-slate-600">สิทธิประโยชน์ขาดทุนสะสมทางภาษี (5 ปี)</span>
                   <strong className="font-mono-num text-blue-700">
                     ฿{formatTHB(Math.abs(Math.min(0, cur.retainedEarningsEnding)))}
@@ -756,7 +756,64 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
               </ResponsiveContainer>
             </div>
 
-            <div className="table-responsive">
+            {/* Mobile Card View (< md) */}
+            <div className="md:hidden space-y-2.5">
+              {sevenYearSeries.map((row) => {
+                const isSelected = row.yearBe === selectedYearBe;
+                return (
+                  <button
+                    key={row.yearBe}
+                    type="button"
+                    onClick={() => setSelectedYearBe(row.yearBe)}
+                    className={`w-full text-left p-3.5 rounded-xl border transition-colors ${
+                      isSelected
+                        ? 'bg-blue-50/70 border-blue-400 shadow-xs'
+                        : 'bg-white border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                      <span className="font-mono-num font-bold text-sm text-slate-900">
+                        พ.ศ. {row.yearBe}
+                      </span>
+                      <span
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${
+                          row.isSavedInDb
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {row.isSavedInDb ? 'บันทึกแล้ว ✓' : 'ฐานข้อมูลงบจริง'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-2 text-xs font-mono-num">
+                      <div>
+                        <span className="text-[11px] text-slate-500 block font-sans">สินทรัพย์รวม</span>
+                        <span className="font-semibold text-slate-900">฿{formatTHB(row.assets)}</span>
+                      </div>
+                      <div className="text-end">
+                        <span className="text-[11px] text-slate-500 block font-sans">รายได้รวม</span>
+                        <span className="font-semibold text-emerald-700">฿{formatTHB(row.revenue)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block font-sans">เงินสดและธนาคาร</span>
+                        <span className="text-slate-700">฿{formatTHB(row.cash)}</span>
+                      </div>
+                      <div className="text-end">
+                        <span className="text-[11px] text-slate-500 block font-sans">กำไร (ขาดทุน) สุทธิ</span>
+                        <span className={`font-bold ${row.netProfitLoss >= 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {row.netProfitLoss < 0
+                            ? `(฿${formatTHB(Math.abs(row.netProfitLoss))})`
+                            : `฿${formatTHB(row.netProfitLoss)}`}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tablet & Desktop Table (>= md) */}
+            <div className="hidden md:block table-responsive">
               <table className="table table-sm table-hover align-middle text-xs sm:text-sm mb-0">
                 <thead className="table-light">
                   <tr>
@@ -823,11 +880,14 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
       {subTab === 'statements' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left: Comparative Statement Tables */}
-          <div className="lg:col-span-7 figma-card p-5 space-y-6">
+          <div className="lg:col-span-7 figma-card p-4 sm:p-5 space-y-6">
             <div>
-              <h2 className="text-base font-bold text-slate-900 mb-2">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-1.5">
                 งบฐานะการเงิน (Balance Sheet) ณ 31 ธันวาคม {currentLedger.fiscalYearBe}
               </h2>
+              <p className="md:hidden text-[11px] text-slate-400 mb-2">
+                เลื่อนตารางซ้าย–ขวาเพื่อดูยอดเปรียบเทียบ →
+              </p>
               <div className="table-responsive">
                 <table className="table table-sm align-middle text-xs sm:text-sm">
                   <thead className="table-light">
@@ -1005,16 +1065,16 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
           </div>
 
           {/* Right: Editable Accounting Adjustments */}
-          <div className="lg:col-span-5 figma-card p-5 space-y-4">
-            <h2 className="text-base font-bold text-slate-900 m-0">
+          <div className="lg:col-span-5 figma-card p-4 sm:p-5 space-y-4">
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 m-0">
               ปรับปรุงตัวเลขปิดงบประจำปี พ.ศ. {selectedYearBe}
             </h2>
-            <p className="text-xs text-slate-500 m-0">
+            <p className="text-xs text-slate-500 m-0 leading-[1.55]">
               กรอกยอดเงินสด เงินฝาก ค่าเสื่อมราคา และค่าใช้จ่ายค้างจ่าย ณ วันสิ้นรอบบัญชีเพื่อให้สมการงบดุลสมดุล
             </p>
 
-            <div className="row g-2.5 text-xs">
-              <div className="col-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              <div>
                 <label className="form-label mb-1">เงินสดในมือ (บาท)</label>
                 <input
                   type="number"
@@ -1024,7 +1084,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('cashOnHand', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">เงินฝากธนาคาร (บาท)</label>
                 <input
                   type="number"
@@ -1034,7 +1094,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('cashAtBank', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ลูกหนี้การค้า</label>
                 <input
                   type="number"
@@ -1044,7 +1104,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('tradeReceivables', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ดอกเบี้ยค้างรับ</label>
                 <input
                   type="number"
@@ -1054,7 +1114,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('accruedInterestReceivable', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ภาษีถูกหัก ณ ที่จ่าย (สินทรัพย์)</label>
                 <input
                   type="number"
@@ -1064,7 +1124,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('withholdingTaxAsset', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ลูกหนี้กรมสรรพากร</label>
                 <input
                   type="number"
@@ -1074,7 +1134,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('revenueDeptReceivable', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">งานระหว่างทำ (WIP)</label>
                 <input
                   type="number"
@@ -1084,7 +1144,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('workInProgress', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">เงินให้กู้ยืมบุคคลเกี่ยวข้อง</label>
                 <input
                   type="number"
@@ -1094,7 +1154,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('relatedPartyLoan', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ค่าใช้จ่ายค้างจ่าย (หนี้สิน)</label>
                 <input
                   type="number"
@@ -1104,7 +1164,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('accruedExpenses', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">รายได้รับล่วงหน้า / มัดจำรับ</label>
                 <input
                   type="number"
@@ -1117,7 +1177,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   }}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ภาษีหัก ณ ที่จ่ายค้างจ่าย</label>
                 <input
                   type="number"
@@ -1127,7 +1187,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('withholdingTaxPayable', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">รายได้จากการให้บริการ</label>
                 <input
                   type="number"
@@ -1137,7 +1197,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('serviceRevenue', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ต้นทุนการให้บริการ</label>
                 <input
                   type="number"
@@ -1147,7 +1207,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('costOfServices', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ค่าใช้จ่ายในการขาย</label>
                 <input
                   type="number"
@@ -1157,7 +1217,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('sellingExpenses', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ค่าใช้จ่ายในการบริหาร</label>
                 <input
                   type="number"
@@ -1167,7 +1227,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('adminExpenses', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">กำไร (ขาดทุน) สะสมต้นปี</label>
                 <input
                   type="number"
@@ -1177,7 +1237,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                   onChange={(e) => updateField('retainedEarningsOpening', Number(e.target.value))}
                 />
               </div>
-              <div className="col-6">
+              <div>
                 <label className="form-label mb-1">ทุนชำระแล้ว</label>
                 <input
                   type="number"
@@ -1257,7 +1317,60 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
             <h3 className="text-sm font-bold text-slate-900 mb-2">
               หมายเหตุ 6. ทะเบียนอุปกรณ์และค่าเสื่อมราคาสะสม (ปี {currentLedger.fiscalYearBe})
             </h3>
-            <div className="table-responsive">
+
+            {/* Mobile Cards (< md) */}
+            <div className="md:hidden space-y-2.5">
+              {[
+                {
+                  name: 'เครื่องมือ (อายุ 5 ปี)',
+                  cost: cur.toolsCost,
+                  depYear: currentLedger.equipmentToolsDepYear,
+                  accum: cur.toolsAccumDep,
+                  net: cur.toolsCost - cur.toolsAccumDep,
+                  total: false,
+                },
+                {
+                  name: 'อุปกรณ์สำนักงาน (อายุ 5 ปี)',
+                  cost: cur.officeCost,
+                  depYear: currentLedger.equipmentOfficeDepYear,
+                  accum: cur.officeAccumDep,
+                  net: cur.officeCost - cur.officeAccumDep,
+                  total: false,
+                },
+                {
+                  name: 'รวมอุปกรณ์สุทธิ',
+                  cost: cur.totalEquipmentCost,
+                  depYear: cur.totalDepYear,
+                  accum: cur.totalAccumDep,
+                  net: cur.netEquipment,
+                  total: true,
+                },
+              ].map((asset) => (
+                <div
+                  key={asset.name}
+                  className={`p-3 rounded-xl border ${
+                    asset.total ? 'bg-slate-100 border-slate-300 font-semibold' : 'bg-white border-slate-200'
+                  }`}
+                >
+                  <div className="text-xs font-bold text-slate-900 mb-1.5">{asset.name}</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs font-mono-num">
+                    <div className="text-slate-600">
+                      ราคาทุน: <strong className="text-slate-900">฿{formatTHB(asset.cost)}</strong>
+                    </div>
+                    <div className="text-end text-slate-600">
+                      เสื่อมปีนี้: <strong className="text-slate-900">฿{formatTHB(asset.depYear)}</strong>
+                    </div>
+                    <div className="text-rose-700">สะสม: (฿{formatTHB(asset.accum)})</div>
+                    <div className="text-end font-bold text-slate-900">
+                      สุทธิ: ฿{formatTHB(asset.net)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tablet & Desktop Table (>= md) */}
+            <div className="hidden md:block table-responsive">
               <table className="table table-sm align-middle text-xs sm:text-sm">
                 <thead className="table-light">
                   <tr>
@@ -1372,16 +1485,16 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
             </div>
 
             {/* PND50 SME Corporate Tax Calculator */}
-            <div className="lg:col-span-5 figma-card p-5 space-y-4">
+            <div className="lg:col-span-5 figma-card p-4 sm:p-5 space-y-4">
               <div className="flex items-center gap-2">
-                <Calculator className="w-5 h-5 text-emerald-700" />
-                <h2 className="text-base font-bold text-slate-900 m-0">
+                <Calculator className="w-5 h-5 text-emerald-700 shrink-0" />
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 m-0">
                   คำนวณภาษีเงินได้นิติบุคคล ภ.ง.ด. 50 (SMEs)
                 </h2>
               </div>
 
-              <div className="row g-2.5 text-xs">
-                <div className="col-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                <div>
                   <label className="form-label mb-1">รายการบวกกลับทางภาษี (ม.65 ตรี)</label>
                   <input
                     type="number"
@@ -1393,7 +1506,7 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
                     }
                   />
                 </div>
-                <div className="col-6">
+                <div>
                   <label className="form-label mb-1">ขาดทุนสะสมยกมา (ไม่เกิน 5 ปี)</label>
                   <input
                     type="number"
@@ -1445,17 +1558,17 @@ export const AnnualReportsView: React.FC<AnnualReportsViewProps> = ({
           </div>
 
           {/* Governance / CPA / AGM Metadata */}
-          <div className="figma-card p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div className="figma-card p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
               <h3 className="text-sm font-bold text-slate-900 m-0 flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-slate-700" />
-                ข้อมูลนิติบุคคล ผู้สอบบัญชีรับอนุญาต (CPA) และการประชุมผู้ถือหุ้น (AGM)
+                <ClipboardCheck className="w-4 h-4 text-slate-700 shrink-0" />
+                <span>ข้อมูลนิติบุคคล ผู้สอบบัญชีรับอนุญาต (CPA) และการประชุมผู้ถือหุ้น (AGM)</span>
               </h3>
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => handleApplyLatestCompanyToYear(false)}
-                className="btn btn-sm btn-outline-secondary text-xs"
+                className="btn btn-sm btn-outline-secondary text-xs w-full sm:w-auto min-h-[36px]"
               >
                 <RefreshCw className="w-3.5 h-3.5 inline me-1" />
                 ดึงที่ตั้งและข้อมูลบริษัทล่าสุดมาใส่ปี {selectedYearBe}

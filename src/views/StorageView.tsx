@@ -581,26 +581,26 @@ export const StorageView: React.FC<StorageViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-figma-in">
+    <div className="space-y-5 sm:space-y-6 animate-figma-in">
       {/* Centered Header */}
-      <div className="flex flex-col items-center text-center gap-3 pb-1">
-        <div className="min-w-0 max-w-2xl">
+      <div className="flex flex-col items-center text-center gap-2.5 sm:gap-3 pb-1">
+        <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
             {formatThaiLineBreaks('บริหารจัดการคลังข้อมูลและรูปภาพเก่า')}
           </h1>
-          <p className="thai-prose text-sm text-slate-500 mt-1 mb-0">
+          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
             {formatThaiLineBreaks(
-              'วิเคราะห์ปริมาณพื้นที่จัดเก็บจริงในรูปแบบอินโฟกราฟิก บีบอัดรูปใบเสร็จเก่า และสำรองล้างข้อมูลที่ไม่จำเป็นเพื่อประหยัดค่าใช้จ่าย'
+              'วิเคราะห์ปริมาณพื้นที่จัดเก็บจริง บีบอัดรูปใบเสร็จเก่า และสำรองล้างข้อมูลที่ไม่จำเป็นเพื่อประหยัดพื้นที่'
             )}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             disabled={storageScanLoading}
             onClick={runStorageScan}
-            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 whitespace-nowrap flex-1 sm:flex-initial"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-300 !rounded-xl hover:bg-slate-50 whitespace-nowrap min-h-[42px]"
           >
             <RefreshCw className={`w-4 h-4 ${storageScanLoading ? 'animate-spin' : ''}`} />
             สแกนพื้นที่ล่าสุด
@@ -609,16 +609,16 @@ export const StorageView: React.FC<StorageViewProps> = ({
           <button
             type="button"
             onClick={() => handleExportArchive('Full_Workspace')}
-            className="figma-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800 whitespace-nowrap flex-1 sm:flex-initial"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-slate-900 !rounded-xl hover:bg-slate-800 whitespace-nowrap min-h-[42px]"
           >
             <Download className="w-4 h-4" />
-            สำรองคลังข้อมูล (.json และ .xlsx)
+            สำรองคลังข้อมูล (.json / .xlsx)
           </button>
         </div>
       </div>
 
       {/* 4-Card Storage KPI Strip */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <div className="figma-card p-5">
           <div className="flex items-center justify-between text-xs font-medium text-slate-500">
             <span>พื้นที่คลังข้อมูลใช้งานจริงรวม</span>
@@ -954,42 +954,42 @@ export const StorageView: React.FC<StorageViewProps> = ({
       </div>
 
       {/* Sub-navigation Tabs & Retention Filter */}
-      <div className="figma-card p-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-lg">
+      <div className="figma-card p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:inline-flex gap-1.5 p-1.5 sm:p-1 bg-slate-200/70 rounded-xl w-full lg:w-auto">
           <button
             type="button"
             onClick={() => setSubTab('images')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-colors text-left sm:text-center min-h-[38px] ${
               subTab === 'images' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
             }`}
           >
-            รูปภาพใบเสร็จและหน้างาน ({report.imageEntries.length})
+            รูปภาพใบเสร็จ ({report.imageEntries.length})
           </button>
           <button
             type="button"
             onClick={() => setSubTab('records')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-colors text-left sm:text-center min-h-[38px] ${
               subTab === 'records' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
             }`}
           >
-            เอกสารร่าง/ยกเลิก และโครงการเก่า ({report.staleDocs.length})
+            เอกสารร่าง/ยกเลิก ({report.staleDocs.length})
           </button>
           <button
             type="button"
             onClick={() => setSubTab('cloud')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap inline-flex items-center gap-1.5 ${
+            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-colors inline-flex items-center sm:justify-center gap-1.5 min-h-[38px] ${
               subTab === 'cloud' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
             }`}
           >
-            <Cloud className="w-3.5 h-3.5" />
-            ไฟล์บน Cloud Storage ({storageFiles.length})
+            <Cloud className="w-3.5 h-3.5 shrink-0" />
+            <span>ไฟล์บน Cloud ({storageFiles.length})</span>
           </button>
         </div>
 
         {subTab !== 'cloud' && (
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full lg:w-auto">
             <select
-              className="form-select form-select-sm w-auto min-w-[180px]"
+              className="form-select form-select-sm w-full sm:w-auto sm:min-w-[180px] !rounded-lg min-h-[38px]"
               value={minDaysOld}
               onChange={(e) => setMinDaysOld(Number(e.target.value))}
               aria-label="กรองตามอายุข้อมูล"
@@ -1009,7 +1009,7 @@ export const StorageView: React.FC<StorageViewProps> = ({
                   checked={onlySettledSafe}
                   onChange={(e) => setOnlySettledSafe(e.target.checked)}
                 />
-                เฉพาะรายการที่คืนเงินเสร็จแล้ว/ปลอดภัย
+                เฉพาะรายการที่คืนเงินเสร็จแล้ว
               </label>
             )}
           </div>
@@ -1019,17 +1019,17 @@ export const StorageView: React.FC<StorageViewProps> = ({
       {/* TAB 1: Old Images Optimizer & Purge */}
       {subTab === 'images' && (
         <div className="figma-card overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+          <div className="px-4 sm:px-5 py-3.5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50/70">
             <div className="text-xs text-slate-600">
               แสดง <strong>{filteredImages.length}</strong> รูปภาพ · เลือกอยู่{' '}
               <strong className="font-mono-num">{selectedImageKeys.size}</strong> รายการ
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 disabled={busyAction || filteredImages.length === 0}
                 onClick={() => handleExportArchive(`Images_${minDaysOld}d`)}
-                className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1.5"
+                className="btn btn-sm btn-outline-secondary inline-flex items-center justify-center gap-1.5 min-h-[36px]"
               >
                 <Download className="w-3.5 h-3.5" />
                 สำรองก่อนล้าง
@@ -1038,7 +1038,7 @@ export const StorageView: React.FC<StorageViewProps> = ({
                 type="button"
                 disabled={busyAction || filteredImages.length === 0}
                 onClick={handleBatchCompressImages}
-                className="btn btn-sm btn-outline-success inline-flex items-center gap-1.5 fw-semibold"
+                className="btn btn-sm btn-outline-success inline-flex items-center justify-center gap-1.5 fw-semibold min-h-[36px]"
               >
                 <Minimize2 className="w-3.5 h-3.5" />
                 บีบอัดรูปเก่าให้เล็กลง
@@ -1047,15 +1047,99 @@ export const StorageView: React.FC<StorageViewProps> = ({
                 type="button"
                 disabled={busyAction || filteredImages.length === 0}
                 onClick={handleBatchPurgeImages}
-                className="btn btn-sm btn-danger inline-flex items-center gap-1.5 fw-semibold"
+                className="btn btn-sm btn-danger inline-flex items-center justify-center gap-1.5 fw-semibold min-h-[36px]"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                ลบรูปภาพเก่าออก (คงตัวเลขบัญชี)
+                ลบรูปภาพเก่าออก
               </button>
             </div>
           </div>
 
-          <div className="table-responsive">
+          {/* Mobile Cards (< md) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {filteredImages.length === 0 ? (
+              <div className="text-center py-10 px-4 text-xs text-slate-500">
+                ไม่พบรูปภาพในเงื่อนไขช่วงอายุที่เลือก
+              </div>
+            ) : (
+              filteredImages.map((entry) => {
+                const editable = canEditExpenseRecord(entry.expense);
+                return (
+                  <div key={entry.key} className="p-3.5 space-y-2.5">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        className="form-check-input mt-1 shrink-0"
+                        disabled={!editable}
+                        checked={selectedImageKeys.has(entry.key)}
+                        onChange={() => toggleImageKey(entry.key)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPhotoUrl(entry.url)}
+                        className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 shrink-0 p-0 cursor-pointer"
+                      >
+                        <img
+                          src={entry.url}
+                          alt={entry.slotLabel}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-slate-900 leading-[1.4]">
+                          {entry.expense.eventName}
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                          {entry.expense.supplierName} · {entry.slotLabel}
+                        </div>
+                      </div>
+                      <div className="text-end shrink-0 font-mono-num">
+                        <div className="text-xs font-bold text-slate-900">{formatBytes(entry.bytes)}</div>
+                        <div className={`text-[11px] font-semibold ${entry.daysOld >= 180 ? 'text-rose-700' : entry.daysOld >= 90 ? 'text-amber-700' : 'text-slate-500'}`}>
+                          {entry.daysOld} วัน
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                      <span className="text-[11px] text-slate-500 font-mono-num">
+                        {formatShortDate(entry.expense.paymentDate)}
+                        {entry.canCompress ? ` · ลดได้ ~${formatBytes(entry.estimatedSavingsBytes)}` : ''}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {entry.canCompress && editable && (
+                          <button
+                            type="button"
+                            disabled={busyAction}
+                            onClick={() => handleCompressSingleImage(entry)}
+                            className="btn btn-sm btn-outline-success text-xs"
+                          >
+                            บีบอัด
+                          </button>
+                        )}
+                        {editable ? (
+                          <button
+                            type="button"
+                            disabled={busyAction}
+                            onClick={() => handlePurgeSingleImage(entry)}
+                            className="btn btn-sm btn-light border text-danger"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">Admin</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Tablet & Desktop Table (>= md) */}
+          <div className="hidden md:block table-responsive">
             <table className="table table-hover align-middle mb-0 text-sm">
               <thead className="table-light">
                 <tr>
@@ -1200,21 +1284,21 @@ export const StorageView: React.FC<StorageViewProps> = ({
       {subTab === 'records' && (
         <div className="space-y-5">
           <div className="figma-card overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50/70">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 m-0">
                   เอกสารร่าง (Draft) และเอกสารยกเลิก (Cancelled)
                 </h3>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-slate-500 mt-0.5">
                   เอกสารที่ไม่ได้ใช้งานจริงสามารถส่งออกสำรองและลบออกเพื่อลดภาระฐานข้อมูลได้
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   disabled={filteredStaleDocs.length === 0}
                   onClick={() => handleExportArchive('Stale_Documents')}
-                  className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1.5"
+                  className="btn btn-sm btn-outline-secondary inline-flex items-center justify-center gap-1.5 min-h-[36px]"
                 >
                   <Download className="w-3.5 h-3.5" />
                   สำรองเอกสาร
@@ -1223,15 +1307,59 @@ export const StorageView: React.FC<StorageViewProps> = ({
                   type="button"
                   disabled={busyAction || filteredStaleDocs.length === 0}
                   onClick={handleBatchDeleteStaleDocs}
-                  className="btn btn-sm btn-danger inline-flex items-center gap-1.5 fw-semibold"
+                  className="btn btn-sm btn-danger inline-flex items-center justify-center gap-1.5 fw-semibold min-h-[36px]"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  ลบเอกสารร่าง/ยกเลิกที่เลือก
+                  ลบเอกสารที่เลือก
                 </button>
               </div>
             </div>
 
-            <div className="table-responsive">
+            {/* Mobile Cards (< md) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {filteredStaleDocs.length === 0 ? (
+                <div className="text-center py-10 px-4 text-xs text-slate-500">
+                  <CheckCircle2 className="w-7 h-7 mx-auto mb-2 text-emerald-500" />
+                  ไม่พบเอกสารร่างหรือเอกสารยกเลิกค้างในเงื่อนไขที่เลือก
+                </div>
+              ) : (
+                filteredStaleDocs.map((item) => {
+                  const canDel = canDeleteDocumentRecord(item.doc);
+                  return (
+                    <div key={item.doc.id} className="p-3.5 flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        className="form-check-input mt-1 shrink-0"
+                        disabled={!canDel}
+                        checked={selectedDocIds.has(item.doc.id)}
+                        onChange={() => toggleDocId(item.doc.id)}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono-num text-xs font-bold text-slate-900">
+                            {item.doc.docNumber} ({item.doc.type})
+                          </span>
+                          <span className="font-mono-num text-xs font-semibold text-slate-900">
+                            {formatBytes(item.bytes)}
+                          </span>
+                        </div>
+                        <div className="text-xs font-semibold text-slate-800 mt-0.5 truncate">
+                          {item.doc.customerSnapshot.companyName}
+                        </div>
+                        <div className="text-[11px] text-slate-500 truncate">{item.doc.eventName}</div>
+                        <div className="flex items-center justify-between mt-1.5 text-[11px] text-slate-500">
+                          <span>{item.doc.status === 'draft' ? 'ร่าง (Draft)' : 'ยกเลิก (Cancelled)'}</span>
+                          <span className="font-mono-num">{item.daysOld} วัน</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Tablet & Desktop Table (>= md) */}
+            <div className="hidden md:block table-responsive">
               <table className="table table-hover align-middle mb-0 text-sm">
                 <thead className="table-light">
                   <tr>
@@ -1328,12 +1456,12 @@ export const StorageView: React.FC<StorageViewProps> = ({
       {/* TAB 3: Firebase Cloud Storage Bucket Files */}
       {subTab === 'cloud' && (
         <div className="figma-card overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+          <div className="px-4 sm:px-5 py-3.5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50/70">
             <div>
               <h3 className="text-sm font-bold text-slate-900 m-0">
                 ไฟล์บน Firebase Cloud Storage Bucket
               </h3>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-slate-500 mt-0.5">
                 ตรวจพบไฟล์กำพร้า (ไม่ได้ใช้งานในระบบแล้ว) จำนวน{' '}
                 <strong className="font-mono-num text-rose-700">
                   {report.orphanedStorageFiles.length}
@@ -1346,7 +1474,7 @@ export const StorageView: React.FC<StorageViewProps> = ({
                 type="button"
                 disabled={busyAction}
                 onClick={handleCleanupAllOrphanedCloudFiles}
-                className="btn btn-sm btn-danger inline-flex items-center gap-1.5 fw-semibold"
+                className="btn btn-sm btn-danger w-full sm:w-auto inline-flex items-center justify-center gap-1.5 fw-semibold min-h-[36px]"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 ล้างไฟล์ที่ไม่ใช้งานทั้งหมด ({report.orphanedStorageFiles.length})
@@ -1372,8 +1500,69 @@ export const StorageView: React.FC<StorageViewProps> = ({
               ไม่พบไฟล์ค้างอยู่ใน Cloud Storage Bucket (0 B)
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0 text-sm">
+            <>
+              {/* Mobile Cards (< md) */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {storageFiles.map((file) => {
+                  const isOrphaned = report.orphanedStorageFiles.some(
+                    (o) => o.fullPath === file.fullPath
+                  );
+                  return (
+                    <div key={file.fullPath} className="p-3.5 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-mono-num text-xs font-semibold text-slate-900 truncate">
+                            {file.name}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-mono-num truncate">
+                            {file.fullPath}
+                          </div>
+                        </div>
+                        <span className="font-mono-num text-xs font-bold text-slate-900 shrink-0">
+                          {formatBytes(file.sizeBytes)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100 text-xs">
+                        <div>
+                          {isOrphaned ? (
+                            <span className="text-rose-700 font-semibold">ไฟล์กำพร้า (ไม่ได้ใช้งานแล้ว)</span>
+                          ) : (
+                            <span className="text-emerald-700 font-semibold">กำลังใช้งานในระบบ</span>
+                          )}
+                          <span className="text-[11px] text-slate-400 ms-2 font-mono-num">
+                            {file.timeCreated ? formatShortDate(file.timeCreated.slice(0, 10)) : '-'}
+                          </span>
+                        </div>
+                        <div className="inline-flex items-center gap-1.5">
+                          {file.downloadUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewPhotoUrl(file.downloadUrl)}
+                              className="btn btn-sm btn-outline-secondary text-xs"
+                            >
+                              ดูไฟล์
+                            </button>
+                          )}
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              disabled={busyAction}
+                              onClick={() => handleDeleteOrphanedCloudFile(file)}
+                              className="btn btn-sm btn-light border text-danger"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Tablet & Desktop Table (>= md) */}
+              <div className="hidden md:block table-responsive">
+                <table className="table table-hover align-middle mb-0 text-sm">
                 <thead className="table-light">
                   <tr>
                     <th className="px-4 py-3">ชื่อไฟล์ / โฟลเดอร์</th>
@@ -1441,6 +1630,7 @@ export const StorageView: React.FC<StorageViewProps> = ({
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       )}

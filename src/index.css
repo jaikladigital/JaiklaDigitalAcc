@@ -1,4 +1,5 @@
-@import "bootstrap/dist/css/bootstrap.min.css";
+@layer bootstrap, theme, base, components, utilities;
+@import "bootstrap/dist/css/bootstrap.min.css" layer(bootstrap);
 @import "tailwindcss";
 
 :root {
@@ -14,12 +15,12 @@
   --jkd-border: #e2e8f0;
   --ease-figma: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Fluid Responsive Typography Scales (Browser Viewport Driven) */
-  --jkd-text-h1: clamp(1.125rem, 1.4vw + 0.72rem, 1.45rem);
-  --jkd-text-h2: clamp(0.95rem, 0.8vw + 0.72rem, 1.125rem);
-  --jkd-text-body: clamp(0.875rem, 0.25vw + 0.81rem, 0.95rem);
-  --jkd-text-sm: clamp(0.75rem, 0.2vw + 0.7rem, 0.825rem);
-  --jkd-text-xs: clamp(0.7rem, 0.15vw + 0.66rem, 0.76rem);
+  /* Fluid Responsive Typography Scales (Mobile-first & Tablet-ready) */
+  --jkd-text-h1: clamp(1.1rem, 1.15vw + 0.72rem, 1.38rem);
+  --jkd-text-h2: clamp(0.95rem, 0.7vw + 0.72rem, 1.125rem);
+  --jkd-text-body: clamp(0.875rem, 0.25vw + 0.8rem, 0.9375rem);
+  --jkd-text-sm: clamp(0.78rem, 0.18vw + 0.72rem, 0.85rem);
+  --jkd-text-xs: clamp(0.72rem, 0.14vw + 0.68rem, 0.78rem);
 }
 
 @layer base {
@@ -42,6 +43,7 @@
 
   /* Thai Script Headroom: Prevent clipping of upper vowels & tone marks (ิ ี ึ ื ่ ้ ๊ ๋ ์) */
   h1, h2, h3, h4, h5, h6 {
+    font-family: 'Anuphan', 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Plus Jakarta Sans', sans-serif;
     line-height: 1.48;
     text-wrap: balance;
     padding-block: 0.04em;
@@ -53,6 +55,14 @@
 
   h2 {
     font-size: var(--jkd-text-h2);
+  }
+
+  h3 {
+    font-size: 0.975rem;
+  }
+
+  h4 {
+    font-size: 0.875rem;
   }
 
   p, li, td, th, label, span {

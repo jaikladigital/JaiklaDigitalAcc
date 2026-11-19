@@ -406,12 +406,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-figma-in">
-      <div className="text-center max-w-2xl mx-auto pb-1">
+    <div className="space-y-5 sm:space-y-6 animate-figma-in">
+      <div className="text-center max-w-2xl mx-auto pb-1 px-1">
         <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
           {formatThaiLineBreaks('ตั้งค่าบริษัท ระบบภาษีหลังบ้าน และซิงค์ข้อมูล DBD')}
         </h1>
-        <p className="thai-prose text-sm text-slate-500 mt-1 mb-0">
+        <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
           {formatThaiLineBreaks(
             'ศูนย์กลางข้อมูลนิติบุคคลที่ซิงค์จากกรมพัฒนาธุรกิจการค้า (DBD) และอัปเดตอัตโนมัติไปยังใบเสนอราคา ใบแจ้งหนี้ ใบเสร็จ 50 ทวิ และงบปี 2569+'
           )}
@@ -472,7 +472,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             disabled={!isAdmin || dbdLoading}
             onClick={handleFetchFromDbd}
-            className="figma-btn px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 disabled:opacity-50 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 shrink-0"
+            className="figma-btn px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 disabled:opacity-50 text-white text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 w-full md:w-auto shrink-0 whitespace-nowrap"
           >
             <RefreshCw className={`w-4 h-4 ${dbdLoading ? 'animate-spin' : ''}`} />
             {dbdLoading ? 'กำลังเชื่อมต่อ DBD...' : 'ดึงข้อมูลล่าสุดจาก DBD'}
@@ -946,13 +946,43 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Team RBAC Management */}
       {isAdmin && (
         <div className="figma-card overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-blue-700" />
-            <h2 className="text-base font-bold text-slate-900 m-0">
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-blue-700 shrink-0" />
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 m-0 thai-heading">
               จัดการสิทธิ์ผู้ใช้งาน (Team &amp; Role Control)
             </h2>
           </div>
-          <div className="table-responsive">
+
+          {/* Mobile Member Cards */}
+          <div className="md:hidden divide-y divide-slate-200">
+            {teamMembers.map((m) => (
+              <div key={m.uid} className="p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm text-slate-900 truncate">{m.displayName}</div>
+                  <div className="text-xs font-mono-num text-slate-500 truncate">{m.email}</div>
+                  <span
+                    className={`inline-block mt-1 text-[11px] font-bold uppercase ${
+                      m.role === 'admin' ? 'text-blue-700' : 'text-slate-600'
+                    }`}
+                  >
+                    {m.role}
+                  </span>
+                </div>
+                <select
+                  className="form-select form-select-sm w-auto shrink-0"
+                  value={m.role}
+                  disabled={m.email === 'jaikladigital@gmail.com'}
+                  onChange={(e) => handleRoleToggle(m, e.target.value as UserRole)}
+                >
+                  <option value="staff">Staff</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            ))}
+          </div>
+
+          {/* Tablet & Desktop Table */}
+          <div className="hidden md:block table-responsive">
             <table className="table align-middle mb-0 text-sm">
               <thead className="table-light">
                 <tr>

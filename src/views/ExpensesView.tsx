@@ -490,27 +490,27 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-figma-in">
+    <div className="space-y-5 sm:space-y-6 animate-figma-in">
       <div className="flex flex-col items-center text-center gap-3 pb-1">
-        <div className="min-w-0 max-w-2xl">
+        <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
             {formatThaiLineBreaks('บันทึกรายจ่ายโปรเจกต์และออกหนังสือรับรอง 50 ทวิ')}
           </h1>
-          <p className="thai-prose text-sm text-slate-500 mt-1 mb-0">
+          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
             {formatThaiLineBreaks(
               'บันทึกรายจ่ายผูกกับ Event พร้อมสแกนดึงข้อมูลจากรูปใบเสร็จอัตโนมัติ และออก 50 ทวิให้ซัพพลายเยอร์'
             )}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
           {onOpenEmergencyTab && (
             <button
               type="button"
               onClick={onOpenEmergencyTab}
-              className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 whitespace-nowrap flex-1 sm:flex-initial"
+              className="figma-btn col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 whitespace-nowrap"
             >
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-4 h-4 shrink-0" />
               เบิกจ่ายฉุกเฉิน (LINE)
             </button>
           )}
@@ -529,67 +529,67 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
               });
               setShowQuickProjModal(true);
             }}
-            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 whitespace-nowrap flex-1 sm:flex-initial"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 shrink-0" />
             สร้างโปรเจกต์ใหม่
           </button>
           <button
             type="button"
             onClick={openAddExpense}
-            className="figma-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800 whitespace-nowrap flex-1 sm:flex-initial"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 whitespace-nowrap"
           >
-            <Receipt className="w-4 h-4" />
+            <Receipt className="w-4 h-4 shrink-0" />
             บันทึกรายจ่ายใหม่
           </button>
         </div>
       </div>
 
       {/* Sub-Tab Switcher: Expenses Ledger vs Revenue Dept WHT Filing (PND3 / PND53) */}
-      <div className="flex flex-wrap items-center justify-center gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:inline-flex md:mx-auto gap-2 w-full md:w-auto">
         <button
           type="button"
           onClick={() => setSubTab('list')}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors inline-flex items-center gap-2 ${
+          className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border transition-colors inline-flex items-center justify-center gap-2 whitespace-nowrap ${
             subTab === 'list'
-              ? 'bg-slate-900 text-white border-slate-900'
+              ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
               : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
           }`}
         >
-          <Receipt className="w-4 h-4" />
+          <Receipt className="w-4 h-4 shrink-0" />
           รายการรายจ่ายทั้งหมด ({filteredExpenses.length})
         </button>
         <button
           type="button"
           onClick={() => setSubTab('wht_audit')}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors inline-flex items-center gap-2 ${
+          className={`min-h-[44px] px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl border transition-colors inline-flex items-center justify-center gap-2 whitespace-nowrap ${
             subTab === 'wht_audit'
-              ? 'bg-slate-900 text-white border-slate-900'
+              ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
               : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
           }`}
         >
-          <ClipboardCheck className="w-4 h-4" />
-          ตรวจเช็กและยื่น ภ.ง.ด. 3 / ภ.ง.ด. 53 (กรมสรรพากร)
+          <ClipboardCheck className="w-4 h-4 shrink-0" />
+          ตรวจเช็กและยื่น ภ.ง.ด. 3 / 53 (สรรพากร)
         </button>
       </div>
 
       {subTab === 'list' ? (
         <>
           {/* Filter & Totals Bar */}
-          <div className="figma-card p-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2 flex-1">
-              <div className="relative min-w-[220px] flex-1 max-w-sm">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="figma-card p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
+              <div className="relative w-full sm:flex-1 sm:max-w-sm">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  className="form-control ps-5"
+                  className="form-control !pl-9"
                   placeholder="ค้นหารายการ, ซัพพลายเยอร์, Event..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
               <select
-                className="form-select w-auto min-w-[220px]"
+                className="form-select w-full sm:w-auto sm:min-w-[210px]"
                 value={filterProjectId}
                 onChange={(e) => setFilterProjectId(e.target.value)}
               >
@@ -602,25 +602,158 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
               </select>
             </div>
 
-            <div className="flex flex-wrap items-center gap-5 text-xs font-mono-num">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-x-5 gap-y-2 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 text-xs font-mono-num">
               <div>
-                ฐานค่าใช้จ่าย: <strong className="text-slate-900">฿{formatTHB(totals.amount)}</strong>
+                <span className="text-slate-500">ฐานค่าใช้จ่าย: </span>
+                <strong className="text-slate-900">฿{formatTHB(totals.amount)}</strong>
               </div>
               <div>
-                VAT ซื้อ: <strong className="text-blue-700">฿{formatTHB(totals.vat)}</strong>
+                <span className="text-slate-500">VAT ซื้อ: </span>
+                <strong className="text-blue-700">฿{formatTHB(totals.vat)}</strong>
               </div>
               <div>
-                WHT หักไว้: <strong className="text-amber-700">฿{formatTHB(totals.wht)}</strong>
+                <span className="text-slate-500">WHT หักไว้: </span>
+                <strong className="text-amber-700">฿{formatTHB(totals.wht)}</strong>
               </div>
               <div>
-                จ่ายสุทธิ: <strong className="text-rose-700">฿{formatTHB(totals.netPaid)}</strong>
+                <span className="text-slate-500">จ่ายสุทธิ: </span>
+                <strong className="text-rose-700">฿{formatTHB(totals.netPaid)}</strong>
               </div>
             </div>
           </div>
 
-          {/* Expenses Table */}
+          {/* Expenses Table (Tablet/Desktop) & Card List (Mobile) */}
           <div className="figma-card overflow-hidden">
-            <div className="table-responsive">
+            {/* Mobile Card List */}
+            <div className="md:hidden divide-y divide-slate-200">
+              {filteredExpenses.length === 0 ? (
+                <div className="text-center py-10 px-4 text-sm text-slate-500">
+                  <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  ยังไม่มีรายการรายจ่ายโครงการ
+                </div>
+              ) : (
+                filteredExpenses.map((e) => {
+                  const audit = auditExpenseWht(e, suppliers);
+                  return (
+                    <div key={e.id} className="p-4 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 font-mono-num">
+                            <span>{formatShortDate(e.paymentDate)}</span>
+                            {e.isEmergencyCash && (
+                              <span className="text-[10.5px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                                เงินสดฉุกเฉิน {e.emergencyVoucherNo || ''}
+                              </span>
+                            )}
+                          </div>
+                          <div className="font-semibold text-sm text-slate-900 thai-prose mt-0.5">
+                            {formatThaiLineBreaks(e.eventName)}
+                          </div>
+                          <div className="text-xs text-slate-600 thai-prose">
+                            {formatThaiLineBreaks(e.description)}
+                          </div>
+                        </div>
+                        <div className="text-end shrink-0 font-mono-num">
+                          <div className="text-xs text-slate-500">จ่ายสุทธิ</div>
+                          <div className="text-base font-bold text-slate-900">
+                            ฿{formatTHB(e.netPaid)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-slate-600 bg-slate-50 rounded-lg p-2.5 border border-slate-100 space-y-1">
+                        <div className="font-medium text-slate-800 thai-prose">
+                          {formatThaiLineBreaks(e.supplierName)}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {audit.entityType === 'individual' ? 'บุคคลธรรมดา' : 'นิติบุคคล'} ·{' '}
+                          {e.whtAmount > 0
+                            ? audit.formType === 'PND3'
+                              ? 'ภ.ง.ด. 3'
+                              : audit.formType === 'PND1'
+                                ? 'ภ.ง.ด. 1'
+                                : 'ภ.ง.ด. 53'
+                            : 'ไม่หัก WHT'}{' '}
+                          · Tax: {e.supplierTaxId || '-'}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-slate-200/70 font-mono-num text-[11px]">
+                          <div>
+                            <span className="text-slate-500 block">ก่อนภาษี</span>
+                            <span className="font-semibold text-slate-900">฿{formatTHB(e.amount)}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 block">VAT</span>
+                            <span className="font-semibold text-blue-700">฿{formatTHB(e.vatAmount)}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 block">WHT ({e.whtRate}%)</span>
+                            <span className="font-semibold text-amber-700">-฿{formatTHB(e.whtAmount)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {e.receiptUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewReceiptUrl(e.receiptUrl!)}
+                              className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              {e.scanPageCount && e.scanPageCount > 1
+                                ? `ดูสแกน (${e.scanPageCount} หน้า)`
+                                : 'ดูรูป'}
+                            </button>
+                          )}
+                          {e.scanFileUrl && (
+                            <a
+                              href={e.scanFileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-semibold text-blue-700 hover:underline px-1.5"
+                            >
+                              ไฟล์สแกนต้นฉบับ
+                            </a>
+                          )}
+                          {e.isEmergencyCash && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedEmergencyVoucher(e)}
+                              className="btn btn-sm btn-outline-danger inline-flex items-center gap-1"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              ใบเบิกฉุกเฉิน
+                            </button>
+                          )}
+                          {e.whtAmount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpen50Tawi(e)}
+                              className="btn btn-sm btn-outline-primary inline-flex items-center gap-1"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              {e.wht50TawiIssued ? e.wht50TawiNo : 'ออก 50 ทวิ'}
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExpense(e)}
+                          className="btn btn-sm btn-light border text-danger ms-auto"
+                          aria-label="ลบรายการ"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Tablet & Desktop Table */}
+            <div className="hidden md:block table-responsive">
               <table className="table table-hover align-middle mb-0 text-sm">
                 <thead className="table-light">
                   <tr>
@@ -777,9 +910,11 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
           return (
             <div className="space-y-4">
               {/* Month Picker + Deadlines */}
-              <div className="figma-card p-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <label className="text-xs font-bold text-slate-700 m-0">เลือกงวดเดือนภาษี:</label>
+              <div className="figma-card p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <label className="text-xs font-bold text-slate-700 m-0 whitespace-nowrap">
+                    เลือกงวดเดือนภาษี:
+                  </label>
                   <select
                     className="form-select form-select-sm w-auto font-mono-num"
                     value={auditMonth}
@@ -792,7 +927,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     ))}
                   </select>
                 </div>
-                <div className="text-xs text-slate-600 flex flex-wrap items-center gap-4">
+                <div className="text-xs text-slate-600 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-4">
                   <span>
                     ยื่นแบบกระดาษภายใน: <strong className="text-slate-900">{deadlines.paperDeadlineTh}</strong>
                   </span>
@@ -806,13 +941,13 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
               {/* Separate PND3 (Individual) vs PND53 (Corporate) Summary Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* PND 3 */}
-                <div className="figma-card p-5 border-t-4 border-t-amber-600 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-bold uppercase text-amber-700">
+                <div className="figma-card p-4 sm:p-5 border-t-2 border-t-amber-600 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-amber-700">
                         แบบ ภ.ง.ด. 3 (บุคคลธรรมดา / คณะบุคคล)
                       </div>
-                      <h3 className="text-base font-bold text-slate-900 mt-0.5 mb-0">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 mt-1 mb-0 thai-heading">
                         ผู้รับเงินบุคคลธรรมดา (เลขประจำตัวขึ้นต้น 1–8)
                       </h3>
                     </div>
@@ -820,28 +955,28 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                       type="button"
                       disabled={pnd3Items.length === 0}
                       onClick={() => exportPndAttachmentExcel(auditMonth, 'PND3', audits, company)}
-                      className="btn btn-sm btn-outline-primary inline-flex items-center gap-1.5 whitespace-nowrap"
+                      className="btn btn-sm btn-outline-primary inline-flex items-center justify-center gap-1.5 whitespace-nowrap w-full sm:w-auto shrink-0"
                     >
                       <FileSpreadsheet className="w-3.5 h-3.5" />
                       Export ใบแนบ ภ.ง.ด. 3
                     </button>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-slate-100 text-xs">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2.5 border-t border-slate-100 text-[11px] sm:text-xs">
                     <div>
                       <div className="text-slate-500">จำนวนรายการ</div>
-                      <div className="text-lg font-bold font-mono-num text-slate-900">
+                      <div className="text-base sm:text-lg font-bold font-mono-num text-slate-900 mt-0.5">
                         {pnd3Items.length}
                       </div>
                     </div>
                     <div>
                       <div className="text-slate-500">เงินได้ที่จ่ายรวม</div>
-                      <div className="text-lg font-bold font-mono-num text-slate-900">
+                      <div className="text-base sm:text-lg font-bold font-mono-num text-slate-900 mt-0.5">
                         ฿{formatTHB(pnd3Base)}
                       </div>
                     </div>
                     <div>
                       <div className="text-slate-500">ภาษีที่ต้องนำส่ง</div>
-                      <div className="text-lg font-bold font-mono-num text-amber-700">
+                      <div className="text-base sm:text-lg font-bold font-mono-num text-amber-700 mt-0.5">
                         ฿{formatTHB(pnd3Tax)}
                       </div>
                     </div>
@@ -849,13 +984,13 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                 </div>
 
                 {/* PND 53 */}
-                <div className="figma-card p-5 border-t-4 border-t-blue-700 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-bold uppercase text-blue-700">
+                <div className="figma-card p-4 sm:p-5 border-t-2 border-t-blue-700 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-blue-700">
                         แบบ ภ.ง.ด. 53 (นิติบุคคล / บริษัท / หจก.)
                       </div>
-                      <h3 className="text-base font-bold text-slate-900 mt-0.5 mb-0">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 mt-1 mb-0 thai-heading">
                         ผู้รับเงินนิติบุคคล (เลขทะเบียนขึ้นต้นด้วย 0)
                       </h3>
                     </div>
@@ -863,28 +998,28 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                       type="button"
                       disabled={pnd53Items.length === 0}
                       onClick={() => exportPndAttachmentExcel(auditMonth, 'PND53', audits, company)}
-                      className="btn btn-sm btn-outline-primary inline-flex items-center gap-1.5 whitespace-nowrap"
+                      className="btn btn-sm btn-outline-primary inline-flex items-center justify-center gap-1.5 whitespace-nowrap w-full sm:w-auto shrink-0"
                     >
                       <FileSpreadsheet className="w-3.5 h-3.5" />
                       Export ใบแนบ ภ.ง.ด. 53
                     </button>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-slate-100 text-xs">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2.5 border-t border-slate-100 text-[11px] sm:text-xs">
                     <div>
                       <div className="text-slate-500">จำนวนรายการ</div>
-                      <div className="text-lg font-bold font-mono-num text-slate-900">
+                      <div className="text-base sm:text-lg font-bold font-mono-num text-slate-900 mt-0.5">
                         {pnd53Items.length}
                       </div>
                     </div>
                     <div>
                       <div className="text-slate-500">เงินได้ที่จ่ายรวม</div>
-                      <div className="text-lg font-bold font-mono-num text-slate-900">
+                      <div className="text-base sm:text-lg font-bold font-mono-num text-slate-900 mt-0.5">
                         ฿{formatTHB(pnd53Base)}
                       </div>
                     </div>
                     <div>
                       <div className="text-slate-500">ภาษีที่ต้องนำส่ง</div>
-                      <div className="text-lg font-bold font-mono-num text-blue-700">
+                      <div className="text-base sm:text-lg font-bold font-mono-num text-blue-700 mt-0.5">
                         ฿{formatTHB(pnd53Tax)}
                       </div>
                     </div>
@@ -894,15 +1029,93 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
 
               {/* Per-Transaction Compliance Table */}
               <div className="figma-card overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-sm font-bold text-slate-900 m-0">
+                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex flex-col gap-1">
+                  <h4 className="text-sm font-bold text-slate-900 m-0 thai-heading">
                     ผลการตรวจสอบความถูกต้องตามระเบียบกรมสรรพากร (ท.ป. 4/2528 และ ม.3 เตรส)
                   </h4>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-500 thai-prose">
                     แยกตรวจทั้ง Tax ID 13 หลัก (Checksum), ประเภทบุคคล/นิติบุคคล, เกณฑ์ขั้นต่ำ 1,000 บาท และการออก 50 ทวิ
                   </span>
                 </div>
-                <div className="table-responsive">
+
+                {/* Mobile Audit Cards */}
+                <div className="md:hidden divide-y divide-slate-200">
+                  {audits.length === 0 ? (
+                    <div className="text-center py-8 px-4 text-sm text-slate-500">
+                      ไม่มีรายการรายจ่ายในเดือน {auditMonth}
+                    </div>
+                  ) : (
+                    audits.map((a) => (
+                      <div key={a.expense.id} className="p-4 space-y-2 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm text-slate-900 thai-prose">
+                              {formatThaiLineBreaks(a.expense.supplierName)}
+                            </div>
+                            <div className="text-slate-500 font-mono-num">
+                              {formatShortDate(a.expense.paymentDate)} · Tax: {a.expense.supplierTaxId || '-'}
+                            </div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold shrink-0">
+                            {a.formType === 'PND3'
+                              ? 'ภ.ง.ด. 3'
+                              : a.formType === 'PND53'
+                                ? 'ภ.ง.ด. 53'
+                                : a.formType === 'PND1'
+                                  ? 'ภ.ง.ด. 1'
+                                  : 'ไม่หัก WHT'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-slate-50 border border-slate-100 font-mono-num">
+                          <div>
+                            <span className="text-slate-500 block">ฐานเงินได้</span>
+                            <span className="font-semibold text-slate-900">฿{formatTHB(a.expense.amount)}</span>
+                          </div>
+                          <div className="text-end">
+                            <span className="text-slate-500 block">ภาษีหัก (WHT)</span>
+                            <span className="font-bold text-amber-700">฿{formatTHB(a.expense.whtAmount)}</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          {a.issues.length === 0 ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              ครบถ้วนพร้อมยื่นสรรพากร
+                            </span>
+                          ) : (
+                            <div className="space-y-1">
+                              {a.issues.map((iss, idx) => (
+                                <div
+                                  key={idx}
+                                  className={iss.severity === 'error' ? 'text-rose-700 font-semibold' : 'text-amber-800'}
+                                >
+                                  • {iss.message}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {a.expense.whtAmount > 0 && (
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpen50Tawi(a.expense)}
+                              className="btn btn-sm btn-outline-primary w-full"
+                            >
+                              {a.expense.wht50TawiIssued ? a.expense.wht50TawiNo : 'ออก 50 ทวิ'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Tablet & Desktop Table */}
+                <div className="hidden md:block table-responsive">
                   <table className="table align-middle mb-0 text-sm">
                     <thead className="table-light">
                       <tr>

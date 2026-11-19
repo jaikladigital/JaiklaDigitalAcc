@@ -202,13 +202,13 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-figma-in">
+    <div className="space-y-5 sm:space-y-6 animate-figma-in">
       <div className="flex flex-col items-center text-center gap-3 pb-1">
-        <div className="min-w-0 max-w-2xl">
+        <div className="min-w-0 max-w-2xl px-1">
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
             {formatThaiLineBreaks('ฐานข้อมูลลูกค้าและการวิเคราะห์ภาษีรายลูกค้า')}
           </h1>
-          <p className="thai-prose text-sm text-slate-500 mt-1 mb-0">
+          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
             {formatThaiLineBreaks(
               'บันทึกข้อมูลลูกค้าเพื่อใช้ดึงอัตโนมัติในใบเสนอราคา/แจ้งหนี้ และวิเคราะห์ยอดใช้บริการสะสม'
             )}
@@ -217,35 +217,125 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         <button
           type="button"
           onClick={openCreateModal}
-          className="figma-btn inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800 whitespace-nowrap w-full sm:w-auto"
+          className="figma-btn inline-flex items-center justify-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 whitespace-nowrap w-full sm:w-auto"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 shrink-0" />
           เพิ่มลูกค้าใหม่
         </button>
       </div>
 
       {/* Search Bar */}
-      <div className="figma-card p-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      <div className="figma-card p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            className="form-control ps-5"
-            placeholder="ค้นหาชื่อบริษัท, เลขประจำตัวผู้เสียภาษี (Tax ID), หรือชื่อผู้ติดต่อ..."
+            className="form-control !pl-9"
+            placeholder="ค้นหาชื่อบริษัท, Tax ID, หรือชื่อผู้ติดต่อ..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="text-xs text-slate-500 font-mono-num">
+        <div className="text-xs text-slate-500 font-mono-num shrink-0 text-end">
           ทั้งหมด {filteredCustomers.length} ราย
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-        {/* Customer Table */}
+        {/* Customer Table & Mobile Cards */}
         <div className={selectedCustomer ? 'xl:col-span-7' : 'xl:col-span-12'}>
           <div className="figma-card overflow-hidden">
-            <div className="table-responsive">
+            {/* Mobile Card List */}
+            <div className="md:hidden divide-y divide-slate-200">
+              {filteredCustomers.length === 0 ? (
+                <div className="text-center py-10 px-4 text-sm text-slate-500">
+                  <Building2 className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  ยังไม่มีข้อมูลลูกค้าในระบบ
+                </div>
+              ) : (
+                filteredCustomers.map((c) => {
+                  const st = customerStats.get(c.id);
+                  const isSelected = selectedAnalyticsId === c.id;
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => setSelectedAnalyticsId(c.id)}
+                      className={`p-4 space-y-2.5 cursor-pointer transition-colors ${
+                        isSelected ? 'bg-blue-50/50' : ''
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm text-slate-900 thai-prose">
+                            {formatThaiLineBreaks(c.companyName)}
+                          </div>
+                          <div className="text-xs text-slate-500 font-mono-num mt-0.5">
+                            Tax ID: {c.taxId || '-'} · {c.branch || 'สำนักงานใหญ่'}
+                          </div>
+                        </div>
+                        <div className="text-end shrink-0 font-mono-num">
+                          <div className="text-[11px] text-slate-500">ยอดสะสม</div>
+                          <div className="text-sm font-bold text-slate-900">
+                            ฿{formatTHB(st?.totalRevenue || 0)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50 rounded-lg p-2.5 border border-slate-100 text-[11px]">
+                        <div>
+                          <span className="text-slate-500 block">ผู้ติดต่อ</span>
+                          <span className="font-medium text-slate-800 truncate block">
+                            {c.contactName || '-'}
+                          </span>
+                          <span className="text-slate-500 font-mono-num">{c.phone || '-'}</span>
+                        </div>
+                        <div className="text-end font-mono-num">
+                          <span className="text-slate-500 block">VAT สะสม</span>
+                          <span className="font-semibold text-blue-700">฿{formatTHB(st?.totalVat || 0)}</span>
+                        </div>
+                        <div className="text-end font-mono-num">
+                          <span className="text-slate-500 block">WHT สะสม</span>
+                          <span className="font-semibold text-amber-700">฿{formatTHB(st?.totalWht || 0)}</span>
+                        </div>
+                      </div>
+
+                      <div
+                        className="flex items-center gap-2 pt-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => onCreateQuotationForCustomer(c)}
+                          className="btn btn-sm btn-outline-primary inline-flex items-center justify-center gap-1 flex-1 whitespace-nowrap"
+                        >
+                          <FilePlus2 className="w-3.5 h-3.5" />
+                          ออกใบเสนอราคา
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(c)}
+                          className="btn btn-sm btn-light border"
+                          title="แก้ไข"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(c)}
+                          className="btn btn-sm btn-light border text-danger"
+                          title="ลบ"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Tablet & Desktop Table */}
+            <div className="hidden md:block table-responsive">
               <table className="table table-hover align-middle mb-0 text-sm">
                 <thead className="table-light">
                   <tr>
@@ -340,7 +430,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
         {/* Customer Analytics Detail Drawer */}
         {selectedCustomer && (
-          <div className="xl:col-span-5 figma-card p-5 animate-figma-in">
+          <div className="xl:col-span-5 figma-card p-4 sm:p-5 animate-figma-in">
             <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200">
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-blue-700">Customer Tax &amp; Revenue Profile</div>
@@ -354,28 +444,28 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedAnalyticsId(null)}
-                className="btn btn-sm btn-light border"
+                className="btn btn-sm btn-light border shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 my-4">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="text-xs text-slate-500">รายได้สะสม</div>
-                <div className="text-sm font-bold font-mono-num text-slate-900 mt-1">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 my-4">
+              <div className="p-2.5 sm:p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="text-[11px] sm:text-xs text-slate-500">รายได้สะสม</div>
+                <div className="text-xs sm:text-sm font-bold font-mono-num text-slate-900 mt-1">
                   ฿{formatTHB(customerStats.get(selectedCustomer.id)?.totalRevenue || 0)}
                 </div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="text-xs text-slate-500">VAT รวม</div>
-                <div className="text-sm font-bold font-mono-num text-blue-700 mt-1">
+              <div className="p-2.5 sm:p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="text-[11px] sm:text-xs text-slate-500">VAT รวม</div>
+                <div className="text-xs sm:text-sm font-bold font-mono-num text-blue-700 mt-1">
                   ฿{formatTHB(customerStats.get(selectedCustomer.id)?.totalVat || 0)}
                 </div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="text-xs text-slate-500">ถูกหัก WHT</div>
-                <div className="text-sm font-bold font-mono-num text-amber-700 mt-1">
+              <div className="p-2.5 sm:p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="text-[11px] sm:text-xs text-slate-500">ถูกหัก WHT</div>
+                <div className="text-xs sm:text-sm font-bold font-mono-num text-amber-700 mt-1">
                   ฿{formatTHB(customerStats.get(selectedCustomer.id)?.totalWht || 0)}
                 </div>
               </div>

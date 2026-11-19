@@ -710,35 +710,35 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
   if (mode === 'preview') {
     return (
       <div className="space-y-4 animate-figma-in">
-        <div className="no-print figma-card p-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setMode('editor')}
-              className="btn btn-light border inline-flex items-center gap-1.5"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              กลับไปแก้ไขเอกสาร
-            </button>
-            <span className="text-xs font-semibold text-slate-600 font-mono-num">
-              {draft.docNumber} · ทั้งหมด {previewPageCount} หน้า A4
-            </span>
-          </div>
+        <div className="no-print figma-card p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => setMode('editor')}
+              className="btn btn-sm btn-light border inline-flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              กลับไปแก้ไข
+            </button>
+            <span className="text-xs font-semibold text-slate-600 font-mono-num">
+              {draft.docNumber} · {previewPageCount} หน้า A4
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
               onClick={() => setMode('list')}
-              className="btn btn-outline-secondary"
+              className="btn btn-sm btn-outline-secondary whitespace-nowrap"
             >
               กลับหน้ารายการ
             </button>
             <button
               type="button"
               onClick={() => window.print()}
-              className="btn btn-primary inline-flex items-center gap-2 px-4 fw-semibold"
+              className="btn btn-sm btn-primary inline-flex items-center justify-center gap-1.5 px-3 fw-semibold whitespace-nowrap"
             >
-              <Printer className="w-4 h-4" />
-              พิมพ์ / Export A4 PDF ({previewPageCount} หน้า)
+              <Printer className="w-4 h-4 shrink-0" />
+              พิมพ์ / PDF ({previewPageCount} หน้า)
             </button>
           </div>
         </div>
@@ -761,21 +761,21 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
     return (
       <div className="space-y-4 animate-figma-in">
         {/* Sticky Editor Toolbar */}
-        <div className="no-print figma-card p-3 flex flex-wrap items-center justify-between gap-3 sticky top-2 z-20 shadow-xs">
-          <div className="flex items-center gap-3">
+        <div className="no-print figma-card p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 lg:sticky lg:top-2 z-20 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setMode('list')}
-              className="btn btn-sm btn-light border inline-flex items-center gap-1"
+              className="btn btn-sm btn-light border inline-flex items-center gap-1 shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
-              รายการเอกสาร
+              รายการ
             </button>
-            <div>
-              <div className="text-sm font-bold text-slate-900 font-mono-num">
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-slate-900 font-mono-num truncate">
                 {draft.docNumber}
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-slate-500 truncate">
                 {draft.type === 'QT'
                   ? 'ใบเสนอราคา (Quotation)'
                   : draft.type === 'INV'
@@ -785,8 +785,8 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-mono-num text-slate-500 px-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
+            <span className="hidden sm:inline text-xs font-mono-num text-slate-500 px-2">
               {previewPageCount} หน้า A4
             </span>
             <button
@@ -800,17 +800,17 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
             <button
               type="button"
               onClick={() => setMode('preview')}
-              className="btn btn-sm btn-outline-primary inline-flex items-center gap-1.5"
+              className="btn btn-sm btn-outline-primary inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
             >
-              <Printer className="w-3.5 h-3.5" />
-              หน้าพิมพ์ A4 เต็มจอ
+              <Printer className="w-3.5 h-3.5 shrink-0" />
+              พิมพ์ A4 ({previewPageCount} หน้า)
             </button>
             <button
               type="button"
               onClick={handleSaveDocument}
-              className="btn btn-sm btn-primary inline-flex items-center gap-1.5 px-3 fw-semibold"
+              className="btn btn-sm btn-primary inline-flex items-center justify-center gap-1.5 px-3 fw-semibold whitespace-nowrap"
             >
-              <Save className="w-3.5 h-3.5" />
+              <Save className="w-3.5 h-3.5 shrink-0" />
               บันทึกเอกสาร
             </button>
           </div>

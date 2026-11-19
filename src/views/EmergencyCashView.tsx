@@ -793,40 +793,40 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-figma-in">
+    <div className="space-y-5 sm:space-y-6 animate-figma-in">
       {/* Header */}
       <div className="flex flex-col items-center text-center gap-3 pb-1">
-        <div className="min-w-0 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold mb-2">
-            <AlertTriangle className="w-3.5 h-3.5" />
+        <div className="min-w-0 max-w-2xl px-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-[11px] sm:text-xs font-bold mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
             Emergency Cash Disbursement &amp; LINE OA Alert
           </div>
           <h1 className="thai-heading thai-title-center font-bold text-slate-900 m-0">
             {formatThaiLineBreaks('เบิกจ่ายเงินสดฉุกเฉิน (พนักงาน / ซัพพลายเยอร์)')}
           </h1>
-          <p className="thai-prose text-sm text-slate-500 mt-1 mb-0">
+          <p className="thai-prose text-xs sm:text-sm text-slate-500 mt-1.5 mb-0">
             {formatThaiLineBreaks(
               `บันทึกการสำรองจ่ายเงินสดหน้างาน แนบรูปถ่ายใบเสร็จเพื่อดึงข้อมูลอัตโนมัติ ออกใบสำคัญจ่าย A4 และส่งแจ้งเตือนไปที่ LINE OA ${oaId}`
             )}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center justify-center gap-2 w-full lg:w-auto">
           <button
             type="button"
             onClick={handleCopyNoLoginUrl}
-            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-blue-800 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 whitespace-nowrap"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-blue-800 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 whitespace-nowrap"
           >
-            <Copy className="w-4 h-4" />
-            คัดลอกลิงก์ส่งบิลด่วน (Rich Menu)
+            <Copy className="w-4 h-4 shrink-0" />
+            คัดลอกลิงก์ส่งบิลด่วน
           </button>
 
           <button
             type="button"
             onClick={() => setShowRichMenuGuide((v) => !v)}
-            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 whitespace-nowrap"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 whitespace-nowrap"
           >
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4 shrink-0" />
             {showRichMenuGuide ? 'ซ่อนคู่มือ Rich Menu' : 'ลิงก์ตั้งค่า Rich Menu'}
           </button>
 
@@ -834,19 +834,19 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
             href={`https://line.me/R/ti/p/${encodeURIComponent(oaId)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 whitespace-nowrap flex-1 sm:flex-initial"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 whitespace-nowrap"
           >
-            <MessageCircle className="w-4 h-4 text-emerald-600" />
+            <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
             LINE OA {oaId}
-            <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+            <ExternalLink className="w-3.5 h-3.5 opacity-70 shrink-0" />
           </a>
 
           <button
             type="button"
             onClick={openCreateModal}
-            className="figma-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-rose-700 rounded-lg hover:bg-rose-800 whitespace-nowrap flex-1 sm:flex-initial"
+            className="figma-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-rose-700 rounded-xl hover:bg-rose-800 whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 shrink-0" />
             บันทึกเบิกเงินสดฉุกเฉิน
           </button>
         </div>
@@ -941,22 +941,145 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
 
       {/* Public No-Login Urgent Submissions Inbox (Admin only) */}
       {urgentRequests.length > 0 && (
-        <div className="figma-card p-5 space-y-3 border border-amber-300 bg-amber-50/30">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="figma-card p-4 sm:p-5 space-y-3 border border-amber-300 bg-amber-50/30">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-base font-bold text-slate-900 m-0">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 m-0 thai-heading">
                 คำขอเบิกด่วนจากภายนอก (ส่งโดยไม่ต้องเข้าสู่ระบบ)
               </h2>
-              <p className="text-xs text-slate-600 mt-0.5 mb-0">
+              <p className="text-xs text-slate-600 mt-0.5 mb-0 thai-prose">
                 ตรวจสอบข้อมูลติดต่อกลับ (LINE ID / อีเมล / เบอร์โทร) และอนุมัตินำเข้าบัญชีรายจ่ายของโปรเจกต์
               </p>
             </div>
-            <span className="text-xs font-mono-num font-bold text-amber-800">
+            <span className="text-xs font-mono-num font-bold text-amber-800 shrink-0">
               รอตรวจสอบ {urgentRequests.filter((r) => r.status === 'pending_review').length} / ทั้งหมด {urgentRequests.length} รายการ
             </span>
           </div>
 
-          <div className="table-responsive">
+          {/* Mobile Urgent Request Cards */}
+          <div className="md:hidden space-y-3">
+            {urgentRequests.map((req) => (
+              <div key={req.id} className="bg-white border border-amber-200 rounded-xl p-3.5 space-y-2.5 text-xs">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-mono-num font-bold text-rose-700">{req.voucherNo}</div>
+                    <div className="text-slate-500 font-mono-num">{formatShortDate(req.paymentDate)}</div>
+                  </div>
+                  <div className="text-end font-mono-num">
+                    <div className="text-slate-500">ยอดสุทธิ</div>
+                    <div className="text-base font-bold text-slate-900">฿{formatTHB(req.netPaid)}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="font-semibold text-sm text-slate-900">
+                    {req.payerName}{' '}
+                    <span className="text-xs font-normal text-slate-500">
+                      ({req.payerType === 'supplier' ? 'ซัพพลายเยอร์' : 'พนักงาน'})
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                    {req.submitterLineId && (
+                      <span className="text-emerald-800 font-mono-num font-semibold inline-flex items-center gap-1">
+                        <MessageCircle className="w-3 h-3" />
+                        {req.submitterLineId}
+                      </span>
+                    )}
+                    {req.submitterPhone && (
+                      <a
+                        href={`tel:${req.submitterPhone}`}
+                        className="text-blue-700 font-mono-num inline-flex items-center gap-1 hover:underline"
+                      >
+                        <Phone className="w-3 h-3" />
+                        {req.submitterPhone}
+                      </a>
+                    )}
+                    {req.submitterEmail && (
+                      <a
+                        href={`mailto:${req.submitterEmail}`}
+                        className="text-slate-600 inline-flex items-center gap-1 hover:underline break-all"
+                      >
+                        <Mail className="w-3 h-3 shrink-0" />
+                        {req.submitterEmail}
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-0.5">
+                  <div className="font-semibold text-slate-800 thai-prose">{req.projectName}</div>
+                  <div className="text-slate-600 thai-prose">{req.description}</div>
+                  {req.urgencyReason && (
+                    <div className="text-[11px] text-rose-700 thai-prose">เร่งด่วน: {req.urgencyReason}</div>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  {req.receiptUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPhotoUrl(req.receiptUrl!)}
+                      className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      ดูบิล
+                    </button>
+                  )}
+                  {req.status === 'pending_review' ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openImportUrgentModal(req)}
+                        className="btn btn-sm btn-success fw-semibold flex-1 whitespace-nowrap"
+                      >
+                        นำเข้าบัญชี &amp; อนุมัติ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRejectUrgentRequest(req)}
+                        className="btn btn-sm btn-outline-secondary"
+                      >
+                        ปฏิเสธ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUrgentRequest(req)}
+                        className="btn btn-sm btn-light border text-danger"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="ms-auto inline-flex items-center gap-2">
+                      <span
+                        className={`font-semibold ${
+                          req.status === 'imported' || req.status === 'approved'
+                            ? 'text-emerald-700'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        {req.status === 'imported'
+                          ? 'นำเข้าบัญชีแล้ว ✓'
+                          : req.status === 'rejected'
+                            ? 'ปฏิเสธแล้ว'
+                            : 'อนุมัติแล้ว'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUrgentRequest(req)}
+                        className="btn btn-sm btn-light border text-danger"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tablet & Desktop Table */}
+          <div className="hidden md:block table-responsive">
             <table className="table table-sm align-middle mb-0 text-xs sm:text-sm bg-white rounded-lg overflow-hidden">
               <thead className="table-light">
                 <tr>
@@ -1100,13 +1223,13 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
       )}
 
       {/* Filters */}
-      <div className="figma-card p-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 flex-1">
-          <div className="relative min-w-[220px] flex-1 max-w-sm">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      <div className="figma-card p-3.5 sm:p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-2.5">
+          <div className="relative sm:col-span-2 lg:flex-1 lg:max-w-sm">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              className="form-control ps-5"
+              className="form-control !pl-9"
               placeholder="ค้นหาเลขที่ ECV, ชื่อผู้สำรองจ่าย, โปรเจกต์..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -1114,7 +1237,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
           </div>
 
           <select
-            className="form-select w-auto min-w-[170px]"
+            className="form-select w-full lg:w-auto lg:min-w-[170px]"
             value={filterPayerType}
             onChange={(e) => setFilterPayerType(e.target.value as 'all' | EmergencyPayerType)}
           >
@@ -1124,7 +1247,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
           </select>
 
           <select
-            className="form-select w-auto min-w-[190px]"
+            className="form-select w-full lg:w-auto lg:min-w-[190px]"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as 'all' | EmergencyCashStatus)}
           >
@@ -1136,9 +1259,138 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
         </div>
       </div>
 
-      {/* Emergency Cash List Table */}
+      {/* Emergency Cash List (Mobile Cards + Tablet/Desktop Table) */}
       <div className="figma-card overflow-hidden">
-        <div className="table-responsive">
+        {/* Mobile Cards */}
+        <div className="md:hidden divide-y divide-slate-200">
+          {filtered.length === 0 ? (
+            <div className="text-center py-10 px-4 text-sm text-slate-500">
+              ยังไม่มีรายการค่าใช้จ่ายเงินสดฉุกเฉิน — กดปุ่ม &ldquo;บันทึกเบิกเงินสดฉุกเฉิน&rdquo; เพื่อเริ่มต้น
+            </div>
+          ) : (
+            filtered.map((exp) => {
+              const status = exp.emergencyStatus || 'pending_reimburse';
+              const statusMeta = STATUS_META[status];
+              const isSupplier = exp.payerType === 'supplier';
+              const photoCount = (exp.receiptUrl ? 1 : 0) + (exp.extraPhotoUrl ? 1 : 0);
+
+              return (
+                <div key={exp.id} className="p-4 space-y-2.5 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-mono-num font-bold text-rose-700">
+                          {exp.emergencyVoucherNo || `ECV-${exp.id.slice(0, 6).toUpperCase()}`}
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded border text-[10.5px] font-semibold ${
+                            isSupplier
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : 'bg-sky-50 text-sky-700 border-sky-200'
+                          }`}
+                        >
+                          {isSupplier ? 'ซัพพลายเยอร์' : 'พนักงาน'}
+                        </span>
+                      </div>
+                      <div className="text-slate-500 font-mono-num mt-0.5">
+                        {formatShortDate(exp.paymentDate)}
+                      </div>
+                    </div>
+                    <div className="text-end font-mono-num shrink-0">
+                      <div className="text-slate-500">ยอดเบิกคืน</div>
+                      <div className="text-base font-bold text-slate-900">฿{formatTHB(exp.netPaid)}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="font-semibold text-sm text-slate-900 thai-prose">
+                      {formatThaiLineBreaks(exp.payerName || exp.supplierName)}
+                      {exp.payerPhone ? ` · ${exp.payerPhone}` : ''}
+                    </div>
+                    <div className="font-medium text-slate-800 thai-prose mt-0.5">
+                      {formatThaiLineBreaks(exp.eventName)}
+                    </div>
+                    <div className="text-slate-600 thai-prose">{formatThaiLineBreaks(exp.description)}</div>
+                    {exp.urgencyReason && (
+                      <div className="text-[11px] text-rose-700 mt-0.5 thai-prose">
+                        เหตุผลฉุกเฉิน: {formatThaiLineBreaks(exp.urgencyReason)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <select
+                      aria-label="สถานะการเบิกคืนเงินสด"
+                      className={`form-select form-select-sm text-xs font-semibold border w-full ${statusMeta.badgeCls}`}
+                      value={status}
+                      onChange={(e) => handleStatusChange(exp, e.target.value as EmergencyCashStatus)}
+                    >
+                      <option value="pending_reimburse">รอตรวจสอบ / เบิกคืน</option>
+                      <option value="approved">อนุมัติจ่ายคืนแล้ว</option>
+                      <option value="reimbursed">คืนเงินสดเรียบร้อย</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {(photoCount > 0 || exp.scanFileUrl) && exp.receiptUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPhotoUrl(exp.receiptUrl!)}
+                        className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        {exp.scanPageCount && exp.scanPageCount > 1
+                          ? `สแกน (${exp.scanPageCount} หน้า)`
+                          : 'ดูใบเสร็จ'}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setVoucherExpense(exp)}
+                      className="btn btn-sm btn-outline-primary inline-flex items-center gap-1"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      ใบเบิก A4
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        sendEmergencyCashLineAlert(exp, company, {
+                          onOpenVoucherPrint: (target) => setVoucherExpense(target),
+                        })
+                      }
+                      className="btn btn-sm text-white inline-flex items-center gap-1"
+                      style={{ backgroundColor: '#06C755' }}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      {exp.lineNotifiedAt ? 'LINE ซ้ำ' : 'แจ้ง LINE'}
+                    </button>
+                    <div className="ms-auto flex items-center gap-1.5">
+                      {status !== 'reimbursed' && (
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(exp)}
+                          className="btn btn-sm btn-light border"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(exp)}
+                        className="btn btn-sm btn-light border text-danger"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="hidden md:block table-responsive">
           <table className="table table-hover align-middle mb-0 text-sm">
             <thead className="table-light">
               <tr>
