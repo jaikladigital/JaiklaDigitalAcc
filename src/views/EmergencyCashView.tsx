@@ -82,6 +82,7 @@ import {
   MultiPageScannerModal,
   MultiPageScanResult,
 } from '../components/MultiPageScannerModal';
+import { UrgentRequestEditModal } from '../components/UrgentRequestEditModal';
 
 interface EmergencyCashViewProps {
   expenses: Expense[];
@@ -126,6 +127,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
   const oaId = (company.lineOaId || '@421khbew').trim() || '@421khbew';
 
   const [importingRequest, setImportingRequest] = useState<UrgentExpenseRequest | null>(null);
+  const [editingUrgentRequest, setEditingUrgentRequest] = useState<UrgentExpenseRequest | null>(null);
   const [importProjectId, setImportProjectId] = useState('');
   const [importingBusy, setImportingBusy] = useState(false);
   const [showRichMenuGuide, setShowRichMenuGuide] = useState(false);
@@ -1015,9 +1017,20 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
 
                 <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-0.5">
                   <div className="font-semibold text-slate-800 thai-prose">{req.projectName}</div>
+                  {req.vendorName && (
+                    <div className="text-[11px] text-slate-700 thai-prose">
+                      ร้านค้า/ปลายทาง: <span className="font-medium">{req.vendorName}</span>
+                      {req.vendorTaxId ? ` (${req.vendorTaxId})` : ''}
+                    </div>
+                  )}
                   <div className="text-slate-600 thai-prose">{req.description}</div>
                   {req.urgencyReason && (
                     <div className="text-[11px] text-rose-700 thai-prose">เร่งด่วน: {req.urgencyReason}</div>
+                  )}
+                  {req.reviewNotes && (
+                    <div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-0.5 mt-1 thai-prose">
+                      แก้ไขโดยบัญชี: {req.reviewNotes}
+                    </div>
                   )}
                 </div>
 
@@ -1026,12 +1039,20 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setPreviewPhotoUrl(req.receiptUrl!)}
-                      className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1"
+                      className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1 whitespace-nowrap"
                     >
                       <ImageIcon className="w-3.5 h-3.5" />
                       ดูบิล
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setEditingUrgentRequest(req)}
+                    className="btn btn-sm btn-outline-primary inline-flex items-center gap-1 whitespace-nowrap"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    แก้ไข
+                  </button>
                   {req.status === 'pending_review' ? (
                     <>
                       <button
@@ -1044,7 +1065,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRejectUrgentRequest(req)}
-                        className="btn btn-sm btn-outline-secondary"
+                        className="btn btn-sm btn-outline-secondary whitespace-nowrap"
                       >
                         ปฏิเสธ
                       </button>
@@ -1145,10 +1166,21 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                     </td>
                     <td>
                       <div className="font-semibold text-slate-800">{req.projectName}</div>
+                      {req.vendorName && (
+                        <div className="text-[11.5px] text-slate-700">
+                          ร้านค้า: <span className="font-medium">{req.vendorName}</span>
+                          {req.vendorTaxId ? ` (${req.vendorTaxId})` : ''}
+                        </div>
+                      )}
                       <div className="text-xs text-slate-600">{req.description}</div>
                       {req.urgencyReason && (
                         <div className="text-[11px] text-rose-700">
                           เร่งด่วน: {req.urgencyReason}
+                        </div>
+                      )}
+                      {req.reviewNotes && (
+                        <div className="inline-block text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5 mt-0.5">
+                          แก้ไขโดยบัญชี: {req.reviewNotes}
                         </div>
                       )}
                     </td>
@@ -1160,7 +1192,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                         <button
                           type="button"
                           onClick={() => setPreviewPhotoUrl(req.receiptUrl!)}
-                          className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1"
+                          className="btn btn-sm btn-outline-secondary inline-flex items-center gap-1 whitespace-nowrap"
                         >
                           <ImageIcon className="w-3.5 h-3.5" />
                           ดูบิล
@@ -1174,6 +1206,15 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             type="button"
+                            onClick={() => setEditingUrgentRequest(req)}
+                            className="btn btn-sm btn-outline-primary inline-flex items-center gap-1 whitespace-nowrap"
+                            title="แก้ไขข้อมูลที่ผู้ส่งพิมพ์ผิด"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            แก้ไข
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => openImportUrgentModal(req)}
                             className="btn btn-sm btn-success fw-semibold whitespace-nowrap"
                           >
@@ -1182,7 +1223,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleRejectUrgentRequest(req)}
-                            className="btn btn-sm btn-outline-secondary"
+                            className="btn btn-sm btn-outline-secondary whitespace-nowrap"
                           >
                             ปฏิเสธ
                           </button>
@@ -1196,9 +1237,9 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                           </button>
                         </div>
                       ) : (
-                        <div className="inline-flex items-center gap-2">
+                        <div className="inline-flex items-center gap-1.5">
                           <span
-                            className={`text-xs font-semibold ${
+                            className={`text-xs font-semibold me-1 ${
                               req.status === 'imported' || req.status === 'approved'
                                 ? 'text-emerald-700'
                                 : 'text-slate-500'
@@ -1210,6 +1251,15 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                                 ? 'ปฏิเสธแล้ว'
                                 : 'อนุมัติแล้ว'}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => setEditingUrgentRequest(req)}
+                            className="btn btn-sm btn-outline-primary inline-flex items-center gap-1 whitespace-nowrap"
+                            title="แก้ไขข้อมูลเพิ่มเติม"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            แก้ไข
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteUrgentRequest(req)}
@@ -2206,7 +2256,7 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
       {/* Photo Lightbox */}
       {previewPhotoUrl && (
         <div
-          className="fixed inset-0 z-50 bg-slate-900/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] bg-slate-900/80 flex items-center justify-center p-4"
           onClick={() => setPreviewPhotoUrl(null)}
         >
           <div
@@ -2281,11 +2331,44 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
                   <strong>ผู้ส่ง:</strong> {importingRequest.payerName} (฿{formatTHB(importingRequest.netPaid)})
                 </div>
                 <div>
+                  <strong>วันที่จ่าย:</strong> {formatShortDate(importingRequest.paymentDate)}
+                </div>
+                <div>
                   <strong>ชื่องานที่แจ้ง:</strong> {importingRequest.projectName}
                 </div>
+                {importingRequest.vendorName && (
+                  <div>
+                    <strong>ร้านค้า / ปลายทาง:</strong> {importingRequest.vendorName}
+                    {importingRequest.vendorTaxId ? ` (${importingRequest.vendorTaxId})` : ''}
+                  </div>
+                )}
                 <div>
                   <strong>รายละเอียด:</strong> {importingRequest.description}
                 </div>
+                <div className="text-slate-600 font-mono-num">
+                  ฐาน ฿{formatTHB(importingRequest.amount)} · VAT {importingRequest.vatRate}% (฿
+                  {formatTHB(importingRequest.vatAmount)}) · WHT {importingRequest.whtRate}% (-฿
+                  {formatTHB(importingRequest.whtAmount)})
+                </div>
+                {importingRequest.reviewNotes && (
+                  <div className="text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1 mt-1">
+                    <strong>หมายเหตุการปรับแก้:</strong> {importingRequest.reviewNotes}
+                  </div>
+                )}
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = importingRequest;
+                    setImportingRequest(null);
+                    setEditingUrgentRequest(target);
+                  }}
+                  className="btn btn-sm btn-outline-primary w-full inline-flex items-center justify-center gap-1.5 text-xs"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  พบข้อมูลพิมพ์ผิด? แก้ไขรายละเอียดและยอดเงินก่อนนำเข้า
+                </button>
               </div>
               <div>
                 <label className="form-label">เลือกโปรเจกต์ที่จะผูกยอดค่าใช้จ่ายเข้าบัญชี *</label>
@@ -2320,6 +2403,18 @@ export const EmergencyCashView: React.FC<EmergencyCashViewProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Edit External Urgent Request Modal */}
+      {editingUrgentRequest && (
+        <UrgentRequestEditModal
+          request={editingUrgentRequest}
+          projects={projects}
+          suppliers={suppliers}
+          onClose={() => setEditingUrgentRequest(null)}
+          onEnlargePhoto={(url) => setPreviewPhotoUrl(url)}
+          onSavedAndProceedImport={(updatedReq) => openImportUrgentModal(updatedReq)}
+        />
       )}
     </div>
   );
