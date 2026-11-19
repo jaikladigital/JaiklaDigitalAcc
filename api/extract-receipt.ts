@@ -253,10 +253,11 @@ export default async function handler(req: VercelRequestLike, res: VercelRespons
     res.status(200).json({ ok: true, data });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'ไม่สามารถสแกนรูปใบเสร็จได้';
+    console.error('[api/extract-receipt] error:', msg);
     if (msg.includes('API_KEY_INVALID') || msg.includes('PERMISSION_DENIED') || msg.includes('403')) {
       res.status(403).json({
         ok: false,
-        error: 'API Key ของ Gemini ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน กรุณาตรวจสอบใน Settings > Secrets',
+        error: 'API Key ของ Gemini ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน กรุณาตรวจสอบค่า GEMINI_API_KEY ในระบบ',
       });
       return;
     }
@@ -267,9 +268,16 @@ export default async function handler(req: VercelRequestLike, res: VercelRespons
       });
       return;
     }
+    if (msg.includes('NOT_FOUND') || msg.includes('404')) {
+      res.status(502).json({
+        ok: false,
+        error: 'โมเดลหรือปลายทาง AI ไม่พร้อมใช้งานในขณะนี้ กรุณากรอกข้อมูลด้านล่างด้วยตนเอง',
+      });
+      return;
+    }
     res.status(502).json({
       ok: false,
-      error: `ไม่สามารถอ่านข้อมูลจากรูปใบเสร็จอัตโนมัติได้ในขณะนี้ กรุณากรอกข้อมูลด้านล่างด้วยตนเอง`,
+      error: 'ไม่สามารถอ่านข้อมูลจากรูปใบเสร็จอัตโนมัติได้ในขณะนี้ กรุณากรอกข้อมูลด้านล่างด้วยตนเอง',
     });
   }
 }

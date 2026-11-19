@@ -643,9 +643,9 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                   </div>
                 ) : (
                   <div className="flex gap-2">
-                    <label className="btn btn-sm btn-primary flex-1 inline-flex items-center justify-center gap-1 cursor-pointer min-h-[40px]">
-                      <Camera className="w-3.5 h-3.5" />
-                      ถ่ายรูป
+                    <label className="btn btn-sm btn-primary flex-1 inline-flex items-center justify-center gap-1.5 cursor-pointer min-h-[40px] whitespace-nowrap px-2">
+                      <Camera className="w-3.5 h-3.5 shrink-0" />
+                      <span>ถ่ายรูป</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -654,9 +654,9 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                         onChange={(e) => handleImagePick('receipt', e)}
                       />
                     </label>
-                    <label className="btn btn-sm btn-outline-secondary flex-1 inline-flex items-center justify-center gap-1 cursor-pointer min-h-[40px]">
-                      <Upload className="w-3.5 h-3.5" />
-                      เลือกรูป
+                    <label className="btn btn-sm btn-outline-secondary flex-1 inline-flex items-center justify-center gap-1.5 cursor-pointer min-h-[40px] whitespace-nowrap px-2">
+                      <Upload className="w-3.5 h-3.5 shrink-0" />
+                      <span>เลือกรูป</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -687,9 +687,9 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                   </div>
                 ) : (
                   <div className="flex gap-2">
-                    <label className="btn btn-sm btn-outline-primary flex-1 inline-flex items-center justify-center gap-1 cursor-pointer min-h-[40px]">
-                      <Camera className="w-3.5 h-3.5" />
-                      ถ่ายหน้างาน
+                    <label className="btn btn-sm btn-outline-primary flex-1 inline-flex items-center justify-center gap-1.5 cursor-pointer min-h-[40px] whitespace-nowrap px-2">
+                      <Camera className="w-3.5 h-3.5 shrink-0" />
+                      <span>ถ่ายหน้างาน</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -698,9 +698,9 @@ export const PublicUrgentExpenseView: React.FC<PublicUrgentExpenseViewProps> = (
                         onChange={(e) => handleImagePick('extra', e)}
                       />
                     </label>
-                    <label className="btn btn-sm btn-outline-secondary flex-1 inline-flex items-center justify-center gap-1 cursor-pointer min-h-[40px]">
-                      <Upload className="w-3.5 h-3.5" />
-                      เลือกรูป
+                    <label className="btn btn-sm btn-outline-secondary flex-1 inline-flex items-center justify-center gap-1.5 cursor-pointer min-h-[40px] whitespace-nowrap px-2">
+                      <Upload className="w-3.5 h-3.5 shrink-0" />
+                      <span>เลือกรูป</span>
                       <input
                         type="file"
                         accept="image/*"
